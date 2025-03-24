@@ -1,0 +1,5 @@
+for environment vars, apparently it's not safe to use a .env file so when we wanna deploy, we need to
+put the stuff on the machine:
+
+# Set permanently (requires admin)
+[System.Environment]::SetEnvironmentVariable('GH_TOKEN', 'your_token_here', 'Machine')

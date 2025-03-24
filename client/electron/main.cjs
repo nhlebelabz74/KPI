@@ -1,5 +1,7 @@
 const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
+const log = require('electron-log'); // Optional for debugging
 require('dotenv').config();
 
 const createWindow = () => {
@@ -13,15 +15,31 @@ const createWindow = () => {
         }
     });
 
-    win.loadURL('http://localhost:5173');
-    // win.loadFile(path.join(__dirname, '../dist/index.html'));
+    // Load the app (dev or prod)
+    if (process.env.NODE_ENV === 'development')
+        win.loadURL('http://localhost:5173');
+    else
+        win.loadFile(path.join(__dirname, '../dist/index.html'));
 
     // Intercept new window events and open links in the default browser instead
     win.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
         return { action: 'deny' };
     });
+
+    // Check for updates on startup
+    autoUpdater.checkForUpdatesAndNotify();
 }
+
+// Auto-updater events
+autoUpdater.on('update-available', () => {
+    log.info('Update available. Downloading...');
+});
+
+autoUpdater.on('update-downloaded', () => {
+    log.info('Update downloaded. Restarting to install...');
+    autoUpdater.quitAndInstall();
+});
 
 // Listen to messages from the preload to open external links
 ipcMain.on('open-external', (event, url) => {
