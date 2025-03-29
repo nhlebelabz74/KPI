@@ -13,23 +13,15 @@ const app = express();
 const port = process.env.PORT || 4774;
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'https://kpi-tracker-lnp.netlify.app'
-    ];
-      
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin || allowedOrigins.includes(origin))
-      callback(null, true);
-    else
-      callback(new Error('Not allowed by CORS'));
-  },
+  origin: [
+    'http://localhost:5173',
+    'https://kpi-tracker-lnp.netlify.app'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With'],
   exposedHeaders: ['Content-Length', 'Authorization'],
-  optionsSuccessStatus: 200 // For legacy browser support
+  optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
