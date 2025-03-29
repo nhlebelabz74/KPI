@@ -14,7 +14,18 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-export default function Page() {
+import { useParams } from "react-router-dom";
+
+// import { Skeleton } from "@/components/ui/skeleton"
+
+const HomePage = () => {
+  // const { email } = useParams();
+  // let { content } = useParams();
+
+  // if (!content) {
+  //   content = "";
+  // }
+
   return (
     (<SidebarProvider>
       <AppSidebar />
@@ -28,17 +39,18 @@ export default function Page() {
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
-                    Building Your Application
+                    KPI's
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                  <BreadcrumbPage>Test</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
+        {/* create components  */}
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
             <div className="bg-muted/50 aspect-video rounded-xl" />
@@ -51,3 +63,5 @@ export default function Page() {
     </SidebarProvider>)
   );
 }
+
+export default HomePage;

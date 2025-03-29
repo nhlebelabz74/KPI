@@ -1,22 +1,11 @@
-// TODO: add forgot password function
-// TODO: add terms of service and privacy policy links
-// TODO: add alert for incorrect email or password
-
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-
-import { Eye, EyeOff } from "lucide-react";
-
-import logo_light from "/logo-light.png";
-import logo_dark from "/logo-dark.png";
-
-import * as z from "zod";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-
+import { z } from "zod";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -25,7 +14,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,27 +25,82 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog, 
+  DialogHeader,
+  DialogContent, 
+  DialogTitle, 
+  DialogTrigger, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import request from "@/utils/request";
+import { SHA256, AES } from "crypto-js"; // Added AES encryption
+import { useAuth } from '@/context/authContext';
+import { toast } from "sonner";
 
-import { dummyData } from "@/constants";
-
+// Zod schema for form validation
 const formSchema = z.object({
-  email: z.string()
-    .email("Invalid email format")
-    .refine(value => value.endsWith("@gmail.com"), {
-      message: "Email must end with @gmail.com",
-    }),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
-const LoginForm = ({ 
-  className, 
-  ...props 
-}) => {
+// Hide default password eye icons
+const hideDefaultPasswordEye = `
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+  input[type="password"]::-webkit-contacts-auto-fill-button,
+  input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none;
+  }
+`;
+
+const LoginForm = ({ className, ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [isValid, setIsValid] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
+  const [resetPasswordEmail, setResetPasswordEmail] = useState("");
+
+  const handleResetPasswordEmailOnChange = (e) => {
+    setResetPasswordEmail(e.target.value);
+  }
+
+  const sendResetPasswordLink = async () => {
+    // try to send the email
+    try {
+      await request({
+        type: 'POST',
+        route: '/users/forgot-password',
+        body: {
+          email: resetPasswordEmail
+        }
+      });
+
+      toast("Email sent successfully", {
+        description: "Check your inbox and click on the link"
+      });
+
+      navigate(`/reset-password/:${resetPasswordEmail}`);
+    }
+    catch (error) {
+      console.error(error);
+
+      setErrorMessage(error?.message || "Something went wrong when we tried to email you");
+      setErrorDialogOpen(true);
+    }
+  }
+
   const navigate = useNavigate();
+  const { login } = useAuth();
+
+  // Encryption secret key (store in .env in production)
+  const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -64,131 +110,234 @@ const LoginForm = ({
     },
   });
 
-  const onSubmit = (values) => {
-    const valid = values.email === dummyData.email && 
-                 values.password === dummyData.password;
+  const onSubmit = async (values) => {
+    try {
+      setIsLoading(true);
+      // const encryptedPassword = SHA256(values.password).toString();
 
-    console.log(valid);
-    console.log("form vals: ", values);
-    console.log("dummy vals: ", dummyData);
-    
-    setIsValid(valid);
-    setShowAlert(true);
-  }
+      const response = await request({
+        route: "/api/auth/login",
+        type: "POST",
+        body: {
+          email: values.email,
+          password: values.password // encryptedPassword,
+        },
+      });
+
+      // Store email securely before showing success dialog
+      const encryptedEmail = AES.encrypt(values.email, SECRET_KEY).toString();
+      localStorage.setItem("user-position", response.data.user.position);
+      login(encryptedEmail, response.data.accessToken);
+      
+      setSuccessDialogOpen(true);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(
+        error?.message || "Login failed. Please check your credentials."
+      );
+      setErrorDialogOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle success dialog countdown
+  useEffect(() => {
+    let timer;
+    if (successDialogOpen && redirectCountdown > 0) {
+      timer = setInterval(() => {
+        setRedirectCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [successDialogOpen, redirectCountdown]);
+
+  // Handle redirect when countdown completes
+  useEffect(() => {
+    if (redirectCountdown === 0) {
+      navigate("/home");
+    }
+  }, [redirectCountdown]);
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-2">
-              <img src={logo_light} alt="logo-light" className="w-60 h-60 mb-[-80px] dark:hidden" />
-              <img src={logo_dark} alt="logo-dark" className="w-60 h-60 mb-[-80px] hidden dark:block" />
-            </div>
+    <>
+      <style>{hideDefaultPasswordEye}</style>
 
-            <div className="flex flex-col gap-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
+      {/* Loading Modal */}
+      <Dialog open={isLoading}>
+        <DialogTitle className="sr-only">Log In</DialogTitle>
+        <DialogContent className="sm:max-w-[425px]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-lg font-medium">Signing in...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Alert Dialog */}
+      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-green-600">
+              Login Successful!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You're being redirected to your home page in {redirectCountdown} seconds...
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction asChild>
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                onClick={() => navigate("/home")}
+              >
+                Go to Home Page Now
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Alert Dialog */}
+      <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">
+              Something went wrong
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {errorMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Try Again</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Login Form */}
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className={cn("flex flex-col gap-6", className)}
+          {...props}
+        >
+          <div className="flex flex-col items-center gap-2 text-center">
+            <h1 className="text-2xl font-bold">Login to your account</h1>
+            <p className="text-muted-foreground text-sm text-balance">
+              Enter your email below to login to your account
+            </p>
+          </div>
+
+          <div className="grid gap-6">
+            {/* Email Field */}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className="grid gap-3">
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="m@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Password Field */}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem className="grid gap-3">
+                  <div className="flex items-center">
+                    <FormLabel>Password</FormLabel>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <p className="ml-auto text-sm underline-offset-4 hover:underline hover:text-primary/90 cursor-pointer">
+                          Forgot your password?
+                        </p>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Password Reset</DialogTitle>
+                          <DialogDescription>
+                            Enter your email so we can send you a password reset link.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="flex flex-row gap-4 items-center">
+                            <Label htmlFor="email" className="">
+                              Email
+                            </Label>
+                            <Input 
+                              id="name"
+                              value={resetPasswordEmail}
+                              onChange={handleResetPasswordEmailOnChange}
+                              placeholder="m@example.com" 
+                              className="w-full" 
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" onClick={sendResetPasswordLink}>Send link</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <div className="relative">
                     <FormControl>
                       <Input
-                        placeholder="m@gmail.com"
-                        type="email"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="********"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Password</FormLabel>
-                      <a
-                        href="#"
-                        className="text-sm underline-offset-4 hover:underline hover:text-primary/90"
-                      >
-                        Forgot your password?
-                      </a>
-                    </div>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="********"
-                          {...field}
-                        />
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-primary dark:text-muted-foreground" aria-hidden="true" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-primary dark:text-muted-foreground" aria-hidden="true" />
-                        )}
-                        <span className="sr-only">
-                          {showPassword ? "Hide password" : "Show password"}
-                        </span>
-                      </Button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {isValid ? "Welcome! :)" : "Something went wrong :("}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isValid 
-                        ? "You have successfully logged in!" 
-                        : "Incorrect email or password. Please try again."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogAction
-                      onClick={() => {
-                        if (isValid) {
-                          navigate(`/home/${form.getValues("email")}/home`);
-                        }
-                      }}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
                     >
-                      Ok
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      )}
+                      <span className="sr-only">
+                        {showPassword ? "Hide password" : "Show password"}
+                      </span>
+                    </Button>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <Button type="submit" className="w-full cursor-pointer">
-                Login
-              </Button>
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? "Signing in..." : "Login"}
+            </Button>
+
+            {/* Sign Up Link */}
+            <div className="text-center text-sm">
+              Don&apos;t have an account?{" "}
+              <Link to="/register" className="underline underline-offset-4 hover:text-primary/90">
+                Sign up
+              </Link>
             </div>
           </div>
         </form>
       </Form>
-
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </div>
-    </div>
+    </>
   );
-}
+};
 
 export { LoginForm };
