@@ -15,7 +15,8 @@ const port = process.env.PORT || 4774;
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = [
-      'http://localhost:5173'
+      'http://localhost:5173',
+      'https://kpi-tracker-lnp.netlify.app'
     ];
       
     // Allow requests with no origin (like mobile apps, curl requests)
