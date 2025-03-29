@@ -14,21 +14,32 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
+import Profitability from "./sections/Profitability";
+import TechnicalSkills from "./sections/TechnicalSkills";
+import Leadership from "./sections/Leadership";
+
 import { useParams } from "react-router-dom";
 
 // import { Skeleton } from "@/components/ui/skeleton"
 
-const HomePage = () => {
-  const { email } = useParams();
+const CAHomePage = () => {
   let { content } = useParams();
 
   if (!content) {
     content = "";
   }
 
+  const sections = [
+    { id: "profit", component: Profitability },
+    { id: "technical", component: TechnicalSkills },
+    { id: "leadership", component: Leadership },
+    { id: "teamwork", component: Leadership },
+    // Add more sections as needed
+  ];
+
   return (
     (<SidebarProvider>
-      <AppSidebar props={{ email: email }}/>
+      <AppSidebar />
       <SidebarInset>
         <header
           className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -44,7 +55,7 @@ const HomePage = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{content}</BreadcrumbPage>
+                  <BreadcrumbPage>Test</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -52,16 +63,18 @@ const HomePage = () => {
         </header>
         {/* create components  */}
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-          </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+          {
+            sections.map((section) => {
+              if(section.id === content) {
+                const SectionComponent = section.component;
+                return <SectionComponent key={section.id} />;
+              }
+            })
+          }
         </div>
       </SidebarInset>
     </SidebarProvider>)
   );
 }
 
-export default HomePage;
+export default CAHomePage;

@@ -1,9 +1,4 @@
 import * as React from "react"
-import {
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
-} from "lucide-react"
 
 import { 
   LineChart,
@@ -16,10 +11,11 @@ import {
   Network 
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -27,109 +23,133 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { TeamSwitcher } from "@/components/team-switcher"
+import request from "@/utils/request";
+
+import CryptoJS from "crypto-js";
+import { AES } from "crypto-js";
+
+
+const getUserData = async (navigate) => {
+  const encryptedEmail = localStorage.getItem("encryptedEmail");
+  const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
+  const decryptedEmail = AES.decrypt(encryptedEmail, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+
+  try {
+    const response = await request({
+      route: "/api/users/get/:email",
+      type: "GET",
+      routeParams: {
+        email: decryptedEmail,
+      },
+    });
+
+    return {
+      name: response.data.name,
+      email: response.data.email,
+      avatarFallback: response.data.name.charAt(0) + response.data.surname.charAt(0),
+    };
+  } catch (error) {
+    console.error(error);
+
+    if (error.sessionExpired) {
+      navigate('/');
+      localStorage.removeItem("encryptedEmail");
+    }
+
+    return {
+      name: "Test",
+      email: "User",
+      avatarFallback: "TU",
+    };
+  }
+};
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Productivity & Profit",
-      url: "#",
+      url: "/profit",
       icon: LineChart,
       isActive: true,
     },
     {
       title: "Forecasting",
-      url: "#",
+      url: "/forecasting",
       icon: CalendarCheck,
     },
     {
       title: "Technical Expertise",
-      url: "#",
+      url: "/technical",
       icon: FileText,
     },
     {
       title: "Leadership",
-      url: "#",
+      url: "/leadership",
       icon: Award,
     },
     {
       title: "Teamwork",
-      url: "#",
+      url: "/teamwork",
       icon: Users,
     },
     {
       title: "Firm Development",
-      url: "#",
+      url: "/firm-dev",
       icon: Building,
     },
     {
       title: "Knowledge Management",
-      url: "#",
+      url: "/knowledge-management",
       icon: BookOpen,
     },
     {
       title: "Business Development",
-      url: "#",
+      url: "/business-dev",
       icon: Network,
     },
-  ],
-  // projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
+  ]
 }
 
-export function AppSidebar({
-  ...props
-}) {
+const AppSidebar = ({ ...props }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const userData = await getUserData(navigate);
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
   return (
     (<Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {/* <TeamSwitcher teams={data.teams} /> */}
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {loading ? (
+          <div>Loading user data...</div>
+        ) : (
+          <NavUser user={user} />
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>)
   );
 }
+
+export { AppSidebar };
