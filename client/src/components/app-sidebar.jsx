@@ -26,21 +26,19 @@ import {
 import { TeamSwitcher } from "@/components/team-switcher"
 import request from "@/utils/request";
 
-import CryptoJS from "crypto-js";
-import { AES } from "crypto-js";
+import { useAuth } from "@/context/authContext";
 
 
 const getUserData = async (navigate) => {
   const encryptedEmail = localStorage.getItem("encryptedEmail");
-  const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
-  const decryptedEmail = AES.decrypt(encryptedEmail, SECRET_KEY).toString(CryptoJS.enc.Utf8);
-
+  const { logout } = useAuth();
+  
   try {
     const response = await request({
       route: "/api/users/get/:email",
       type: "GET",
       routeParams: {
-        email: decryptedEmail,
+        email: encodeURIComponent(encryptedEmail),
       },
     });
 
@@ -54,7 +52,7 @@ const getUserData = async (navigate) => {
 
     if (error.sessionExpired) {
       navigate('/');
-      localStorage.removeItem("encryptedEmail");
+      logout();
     }
 
     return {
