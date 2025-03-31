@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogHeader, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { UploadCloud, Save, StarIcon, Check, Info } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Salaried and Equity Director Technical Skills Component
 const TechnicalSkills = () => {
