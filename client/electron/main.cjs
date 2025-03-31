@@ -1,13 +1,15 @@
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const log = require('electron-log'); // Optional for debugging
 require('dotenv').config();
 
 const createWindow = () => {
+    const iconPath = path.join(__dirname, 'assets', 'icon.ico');
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
+        icon: iconPath,
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
@@ -42,6 +44,18 @@ autoUpdater.on('update-downloaded', () => {
 });
 
 // Listen to messages from the preload to open external links
+ipcMain.on('open-external', (event, url) => {
+    shell.openExternal(url);
+});
+
+ipcMain.handle('get-current-dir', () => {
+    return process.cwd();
+});
+
+ipcMain.handle('show-open-dialog', async (event, options) => {
+    return dialog.showOpenDialog(options);
+});
+  
 ipcMain.on('open-external', (event, url) => {
     shell.openExternal(url);
 });

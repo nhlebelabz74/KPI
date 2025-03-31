@@ -3,504 +3,489 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { PieChart, Pie, Cell } from 'recharts';
-import { UploadCloud, Save } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BarChart, Bar, XAxis, CartesianGrid, RadialBarChart, PolarGrid, RadialBar, PolarRadiusAxis } from 'recharts';
+import { UploadCloud, Save, PlusCircle, MinusCircle } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, } from '@/components/ui/chart';
+import { AlertDialog, AlertDialogHeader, AlertDialogTrigger, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogContent } from '@/components/ui/alert-dialog';
 
-const Profitability = () => {
-  // Constants
-  const TOTAL_ANNUAL_BUDGET = 6000000; // 6 million
-  const PROMOTION_THRESHOLD = TOTAL_ANNUAL_BUDGET * 3;
-  const MONTHLY_PERCENTAGES = [15, 7.5, 7.5, 9, 9, 9, 10, 12, 12, 5, 4];
-  const MONTHS = ['Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025', 'Jul 2025', 'Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026'];
-  
-  // Calculate monthly budget targets
-  const monthlyBudgetTargets = MONTHLY_PERCENTAGES.map(percentage => (TOTAL_ANNUAL_BUDGET * percentage) / 100);
-  
-  // State for tracking metrics
-  const [billableHours, setBillableHours] = useState(850);
-  const [nonBillableHours, setNonBillableHours] = useState(90);
-  const [writtenOffHours, setWrittenOffHours] = useState(320);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  
-  // State for monthly data entry
-  const [monthlyData, setMonthlyData] = useState(
-    MONTHS.map((month, index) => ({
-      name: month,
-      target: monthlyBudgetTargets[index],
-      billed: index === 0 ? 850000 : index === 1 ? 430000 : 0, // Hardcoded values for March and April
-      billable: index === 0 ? 70 : index === 1 ? 35 : 0,
-      nonBillable: index === 0 ? 10 : index === 1 ? 5 : 0,
-      evidence: null
-    }))
+const TOTAL_ANNUAL_BUDGET = 6000000; // 6 million. Use request function to get actual value
+const BUDGET_ACHIEVED = [850000, 430000, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // get from sharepoint as discussed
+const MONTHLY_PERCENTAGES = [15, 7.5, 7.5, 9, 9, 9, 10, 12, 12, 5, 4]; // constant
+
+const MonthlyBudgetSection = () => {
+  const chartData = [
+    { month: 'Mar', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[0]) / 100, billed: BUDGET_ACHIEVED[0] },
+    { month: 'Apr', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[1]) / 100, billed: BUDGET_ACHIEVED[1] },
+    { month: 'May', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[2]) / 100, billed: BUDGET_ACHIEVED[2] },
+    { month: 'Jun', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[3]) / 100, billed: BUDGET_ACHIEVED[3] },
+    { month: 'Jul', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[4]) / 100, billed: BUDGET_ACHIEVED[4] },
+    { month: 'Aug', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[5]) / 100, billed: BUDGET_ACHIEVED[5] },
+    { month: 'Sep', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[6]) / 100, billed: BUDGET_ACHIEVED[6] },
+    { month: 'Oct', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[7]) / 100, billed: BUDGET_ACHIEVED[7] },
+    { month: 'Nov', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[8]) / 100, billed: BUDGET_ACHIEVED[8] },
+    { month: 'Dec', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[9]) / 100, billed: BUDGET_ACHIEVED[9] },
+    { month: 'Jan', target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[10]) / 100, billed: BUDGET_ACHIEVED[10] }
+  ];
+
+  const chartConfig = {
+    billed: {
+      label: 'Billed',
+      color: 'var(--chart-1)'
+    },
+    target: {
+      label: 'Target',
+      color: 'var(--chart-2)'
+    },
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Monthly Budget Achievement</CardTitle>
+        <CardDescription>March 2025 - January 2026</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig}>
+          <BarChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent indicator="dashed" />}
+            />
+            <Bar dataKey="billed" fill="var(--color-billed)" radius={4} />
+            <Bar dataKey="target" fill="var(--color-target)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
   );
-  
-  // State for current month being edited
-  const [selectedMonth, setSelectedMonth] = useState(0);
-  const [currentMonthBillable, setCurrentMonthBillable] = useState(monthlyData[0].billable);
-  const [currentMonthNonBillable, setCurrentMonthNonBillable] = useState(monthlyData[0].nonBillable);
-  const [currentMonthBilled, setCurrentMonthBilled] = useState(monthlyData[0].billed);
-  const [currentMonthEvidence, setCurrentMonthEvidence] = useState(null);
-  
-  // Calculate total billed amount and progress
-  const totalBilledAmount = monthlyData.reduce((sum, month) => sum + month.billed, 0);
-  const progressToPromotion = (totalBilledAmount / PROMOTION_THRESHOLD) * 100;
-  
-  // Handle file selection
-  const handleFileChange = (event, id) => {
-    const file = event.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      if (id === 'monthlyEvidence') {
-        setCurrentMonthEvidence(file);
-      } else {
-        setSelectedFile(file);
+}
+
+const HoursSection = () => {
+  const billableHoursTarget = 1200;
+  const nonBillableHoursTarget = 150;
+  const writtenOffHoursTarget = 0.5 * billableHoursTarget;
+
+  const [hoursData, setHoursData] = useState({
+    billableHours: 200,
+    nonBillableHours: 12,
+    writtenOffHours: 50
+  });
+
+  const [progress, setProgress] = useState({
+    billable: 0,
+    nonBillable: 0,
+    writtenOff: 0
+  });
+
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const data = await window.electronAPI.readHoursFile();
+        if (data) {
+          setHoursData(prev => ({
+            ...prev,
+            ...data
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading hours data:', error);
       }
-    } else {
-      alert('Please select a PDF file');
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Update progress whenever hours change
+  useEffect(() => {
+    setProgress({
+      billable: (hoursData.billableHours / billableHoursTarget) * 100,
+      nonBillable: (hoursData.nonBillableHours / nonBillableHoursTarget) * 100,
+      writtenOff: (hoursData.writtenOffHours / writtenOffHoursTarget) * 100
+    });
+  }, [hoursData]);
+
+  const handleSaveHours = async () => {
+    try {
+      await window.electronAPI.saveHoursFile(hoursData);
+      setShowSuccessDialog(true);
+    } catch (error) {
+      console.error('Failed to save hours:', error);
     }
   };
-  
-  // Handle saving monthly data
-  const saveMonthlyData = () => {
-    const updatedData = [...monthlyData];
-    updatedData[selectedMonth] = {
-      ...updatedData[selectedMonth],
-      billable: currentMonthBillable,
-      nonBillable: currentMonthNonBillable,
-      billed: currentMonthBilled,
-      evidence: currentMonthEvidence ? currentMonthEvidence.name : null
+
+  const updateHours = (type, amount) => {
+    setHoursData(prev => {
+      const newValue = Math.max(0, prev[type] + amount);
+      return {
+        ...prev,
+        [type]: newValue
+      };
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hours Tracking</CardTitle>
+        <CardDescription>Track your billable, non-billable, and written-off hours</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className='flex flex-col gap-5'>
+          {/* Billable Hours */}
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor="billableHours">Billable Hours</Label>
+            <Progress value={progress.billable} className="h-2 w-[75%]" />
+            <div className='flex flex-row items-center gap-2'>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('billableHours', -1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <MinusCircle className="h-4 w-4" />
+              </Button>
+              <p>{hoursData.billableHours} hours</p>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('billableHours', 1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Non-Billable Hours */}
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor="nonBillableHours">Non-Billable Hours</Label>
+            <Progress value={progress.nonBillable} className="h-2 w-[75%]" />
+            <div className='flex flex-row items-center gap-2'>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('nonBillableHours', -1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <MinusCircle className="h-4 w-4" />
+              </Button>
+              <p>{hoursData.nonBillableHours} hours</p>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('nonBillableHours', 1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Written Off Hours */}
+          <div className='flex flex-col gap-2'>
+            <Label htmlFor="writtenOffHours">Written Off Hours</Label>
+            <Progress value={progress.writtenOff} className="h-2 w-[75%]" />
+            <div className='flex flex-row items-center gap-2'>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('writtenOffHours', -1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <MinusCircle className="h-4 w-4" />
+              </Button>
+              <p>{hoursData.writtenOffHours} hours</p>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => updateHours('writtenOffHours', 1)} 
+                className='rounded-full h-5 w-5'
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button variant='outline' onClick={handleSaveHours}>
+          Save Changes <Save className="ml-2 h-4 w-4" />
+        </Button>
+
+        {/* Success Dialog */}
+        <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hours Data Saved</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your hours data has been saved successfully.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardFooter>
+    </Card>
+  );
+};
+
+const PromotionSection = () => {
+  const promotionThreshold = TOTAL_ANNUAL_BUDGET * 3; // 3x annual budget
+  const totalBilledAmount = BUDGET_ACHIEVED.reduce((acc, curr) => acc + curr, 0);
+  const progressToPromotion = (totalBilledAmount / promotionThreshold) * 100; // percentage to display
+
+  const chartData = [
+    {
+      name: "Progress",
+      value: progressToPromotion,
+    },
+  ];
+
+  const chartConfig = {
+    value: {
+      label: "Progress",
+    },
+    progress: {
+      label: "Promotion Progress",
+      color: "var(--chart-1)",
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Progress to Promotion</CardTitle>
+        <CardDescription>
+          Target: {promotionThreshold.toLocaleString()}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[250px]"
+        >
+          <RadialBarChart
+            data={chartData}
+            startAngle={90}
+            endAngle={-270 * (progressToPromotion / 100) + 90}
+            innerRadius={80}
+            outerRadius={140}
+          >
+            <PolarGrid
+              gridType="circle"
+              radialLines={false}
+              stroke="none"
+              className="first:fill-muted last:fill-background"
+              polarRadius={[86, 74]}
+            />
+            <RadialBar dataKey="value" background fill='var(--chart-1)'/>
+            <PolarRadiusAxis
+              tick={false}
+              tickLine={false}
+              axisLine={false}
+            />
+            <text
+              x="50%"
+              y="50%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="text-2xl font-bold"
+              fill='var(--chart-1)'
+            >
+              {progressToPromotion.toFixed(2)}%
+            </text>
+          </RadialBarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
+const QualitativeKPISection = () => {
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const [textInputs, setTextInputs] = useState({});
+  const [existingPdfs, setExistingPdfs] = useState({});
+
+  // Load saved data on component mount
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        // Load text inputs
+        const savedData = await window.electronAPI.loadQualitativeData();
+        setTextInputs(savedData);
+        
+        // Check which PDFs exist
+        const kpiNumbers = ['1.1.4', '1.1.5', '1.1.6', '1.1.7'];
+        const pdfStatus = {};
+        
+        for (const kpiNumber of kpiNumbers) {
+          pdfStatus[kpiNumber] = await window.electronAPI.checkPdfExists(kpiNumber);
+        }
+        
+        setExistingPdfs(pdfStatus);
+      } catch (error) {
+        console.error('Error loading saved data:', error);
+      }
     };
     
-    setMonthlyData(updatedData);
-    
-    // Update overall metrics based on all monthly data
-    const totalBillable = updatedData.reduce((sum, month) => sum + parseInt(month.billable || 0), 0);
-    const totalNonBillable = updatedData.reduce((sum, month) => sum + parseInt(month.nonBillable || 0), 0);
-    
-    setBillableHours(totalBillable);
-    setNonBillableHours(totalNonBillable);
-    
-    // Save to JSON file (simulated)
-    saveToJson(updatedData);
-    
-    setAlertMessage('Monthly data saved successfully!');
-    setShowAlert(true);
-    setTimeout(() => setShowAlert(false), 3000);
+    loadSavedData();
+  }, []);
+
+  const handleFileChange = (event, kpiNumber) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFiles(prev => ({
+        ...prev,
+        [kpiNumber]: file
+      }));
+    }
   };
-  
-  // Simulated function to save data to JSON
-  const saveToJson = (data) => {
-    console.log('Saving data to JSON:', data);
-    // In a real application, you would use an API call or filesystem methods
-    // For now, we'll just output to console and show an alert
+
+  const handleTextChange = (event, kpiNumber) => {
+    setTextInputs(prev => ({
+      ...prev,
+      [kpiNumber]: event.target.value
+    }));
   };
-  
-  // Handle saving qualitative KPI data
-  const saveQualitativeData = () => {
-    setAlertMessage('Qualitative data saved successfully!');
-    setShowAlert(true);
-    setTimeout(() => setShowAlert(false), 3000);
-  };
-  
-  // Update form fields when selected month changes
-  useEffect(() => {
-    setCurrentMonthBillable(monthlyData[selectedMonth].billable);
-    setCurrentMonthNonBillable(monthlyData[selectedMonth].nonBillable);
-    setCurrentMonthBilled(monthlyData[selectedMonth].billed);
-    setCurrentMonthEvidence(null);
-  }, [selectedMonth]);
-  
-  // Data for pie chart showing billable vs written off
-  const billingEfficiencyData = [
-    { name: 'Billed', value: billableHours - writtenOffHours },
-    { name: 'Written Off', value: writtenOffHours }
-  ];
-  
-  // Prepare data for budget tracking chart
-  const budgetTrackingData = monthlyData.map(month => ({
-    name: month.name,
-    target: month.target,
-    billed: month.billed,
-    achieved: month.target > 0 ? (month.billed / month.target) * 100 : 0
-  }));
-  
-  const COLORS = ['#0088FE', '#FF8042'];
-  
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Production and Profitability</h1>
-      <h2 className="text-2xl font-semibold mb-4">Candidate Attorney</h2>
+
+  const saveQualitativeData = async () => {
+    try {
+      // Prepare data to save
+      const dataToSave = {
+        textData: textInputs,
+        files: selectedFiles
+      };
       
-      {showAlert && (
-        <Alert className="mb-4 bg-green-100 border-green-400">
-          <AlertDescription>{alertMessage}</AlertDescription>
-        </Alert>
+      // Save all data at once
+      const result = await window.electronAPI.saveQualitativeData(dataToSave);
+      
+      // Update existing PDFs status
+      const updatedPdfs = { ...existingPdfs };
+      for (const kpiNumber in selectedFiles) {
+        updatedPdfs[kpiNumber] = true;
+      }
+      setExistingPdfs(updatedPdfs);
+      
+      alert('All qualitative data saved successfully!');
+    } catch (error) {
+      console.error('Error saving qualitative data:', error);
+      alert('Failed to save qualitative data');
+    }
+  };
+
+  // Render function for each KPI card
+  const renderKpiCard = (kpiNumber, title, description) => (
+    <Card key={kpiNumber}>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Textarea 
+          placeholder={`Describe how you meet ${title.toLowerCase()}...`}
+          className="min-h-32 mb-4"
+          onChange={(e) => handleTextChange(e, kpiNumber)}
+          value={textInputs[kpiNumber] || ''}
+        />
+        <div className="flex items-center gap-2 mb-2">
+          <Button onClick={() => document.getElementById(`file-${kpiNumber}`).click()}>
+            <UploadCloud className="mr-2 h-4 w-4" /> Upload Evidence
+          </Button>
+          <input
+            id={`file-${kpiNumber}`}
+            type="file"
+            accept=".pdf"
+            onChange={(e) => handleFileChange(e, kpiNumber)}
+            className="hidden"
+          />
+          {selectedFiles[kpiNumber] && (
+            <span className="text-sm text-gray-500">{selectedFiles[kpiNumber].name}</span>
+          )}
+        </div>
+        {existingPdfs[kpiNumber] && (
+          <div className="text-sm text-green-600">
+            Existing evidence PDF found for this KPI
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      {renderKpiCard(
+        '1.1.4',
+        'Time Tracking Accuracy',
+        'Accurately captures all time (billable and non-billable)'
       )}
       
-      <Tabs defaultValue="metrics" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="metrics">Key Metrics</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly Progress</TabsTrigger>
-          <TabsTrigger value="qualitative">Qualitative KPIs</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="metrics">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Billable Hours</CardTitle>
-                <CardDescription>Annual Target: 1200 hours</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Progress: {billableHours} hours</span>
-                      <span className="text-sm font-medium">{Math.round((billableHours / 1200) * 100)}%</span>
-                    </div>
-                    <Progress value={(billableHours / 1200) * 100} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Non-Billable Hours</CardTitle>
-                <CardDescription>Annual Target: 150 hours</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Progress: {nonBillableHours} hours</span>
-                      <span className="text-sm font-medium">{Math.round((nonBillableHours / 150) * 100)}%</span>
-                    </div>
-                    <Progress value={(nonBillableHours / 150) * 100} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Written Off Hours</CardTitle>
-                <CardDescription>Should be less than 50% of billable hours</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">{writtenOffHours} hours written off</span>
-                      <span className={`text-sm font-medium ${(writtenOffHours / billableHours) > 0.5 ? 'text-red-500' : 'text-green-500'}`}>
-                        {Math.round((writtenOffHours / billableHours) * 100)}% of billable
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(writtenOffHours / billableHours) * 100} 
-                      className="h-2"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Billing Efficiency</CardTitle>
-                <CardDescription>Percentage of billable hours not written off</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={billingEfficiencyData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {billingEfficiencyData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Progress to Promotion</CardTitle>
-                <CardDescription>Target: R{(PROMOTION_THRESHOLD / 1000000).toFixed(1)} million (3x annual budget)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">
-                        Billed: R{(totalBilledAmount / 1000000).toFixed(2)} million
-                      </span>
-                      <span className="text-sm font-medium">{progressToPromotion.toFixed(1)}%</span>
-                    </div>
-                    <Progress value={progressToPromotion} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="monthly">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Budget Achievement by Month</CardTitle>
-              <CardDescription>Monthly budget targets vs actual billed amount</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={budgetTrackingData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis yAxisId="left" orientation="left" label={{ value: 'Amount (R)', angle: -90, position: 'insideLeft' }} />
-                    <YAxis yAxisId="right" orientation="right" label={{ value: '% Achieved', angle: 90, position: 'insideRight' }} />
-                    <Tooltip formatter={(value, name) => [
-                      name === 'achieved' ? `${value.toFixed(1)}%` : `R${(value / 1000000).toFixed(2)}M`, 
-                      name === 'achieved' ? '% Achieved' : name === 'target' ? 'Target' : 'Billed'
-                    ]} />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="target" fill="#8884d8" name="Target (R)" />
-                    <Bar yAxisId="left" dataKey="billed" fill="#82ca9d" name="Billed (R)" />
-                    <ReferenceLine yAxisId="right" y={100} stroke="red" strokeDasharray="3 3" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Hours Entry</CardTitle>
-              <CardDescription>Record your billable and non-billable hours for each month</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <Label>Select Month</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {MONTHS.map((month, index) => (
-                      <Button 
-                        key={month}
-                        variant={selectedMonth === index ? "default" : "outline"} 
-                        onClick={() => setSelectedMonth(index)}
-                      >
-                        {month}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="monthBillable">Billable Hours</Label>
-                    <Input 
-                      id="monthBillable" 
-                      type="number" 
-                      value={currentMonthBillable}
-                      onChange={(e) => setCurrentMonthBillable(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="monthNonBillable">Non-Billable Hours</Label>
-                    <Input 
-                      id="monthNonBillable" 
-                      type="number" 
-                      value={currentMonthNonBillable}
-                      onChange={(e) => setCurrentMonthNonBillable(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="monthBilled">Billed Amount (R)</Label>
-                    <Input 
-                      id="monthBilled" 
-                      type="number" 
-                      value={currentMonthBilled}
-                      onChange={(e) => setCurrentMonthBilled(parseInt(e.target.value) || 0)}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Upload Evidence (PDF)</Label>
-                  <div className="flex items-center gap-2">
-                    <Button onClick={() => document.getElementById('monthlyEvidence').click()}>
-                      <UploadCloud className="mr-2 h-4 w-4" /> Upload
-                    </Button>
-                    <input
-                      id="monthlyEvidence"
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => handleFileChange(e, 'monthlyEvidence')}
-                      className="hidden"
-                    />
-                    {currentMonthEvidence && <span className="text-sm text-gray-500">{currentMonthEvidence.name}</span>}
-                  </div>
-                </div>
-                
-                <Button onClick={saveMonthlyData} className="w-full">
-                  <Save className="mr-2 h-4 w-4" /> Save {MONTHS[selectedMonth]} Data
-                </Button>
-                
-                <div className="p-4 bg-gray-100 rounded-md">
-                  <p className="text-sm text-gray-700">
-                    <strong>Current month target:</strong> R{(monthlyData[selectedMonth].target / 1000000).toFixed(2)}M ({MONTHLY_PERCENTAGES[selectedMonth]}% of annual budget)
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <strong>Achievement:</strong> {monthlyData[selectedMonth].target > 0 ? ((monthlyData[selectedMonth].billed / monthlyData[selectedMonth].target) * 100).toFixed(1) : 0}% of target
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="qualitative">
-          <div className="grid grid-cols-1 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Time Tracking Accuracy</CardTitle>
-                <CardDescription>KPI 1.1.4: Accurately captures all time (billable and non-billable)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  placeholder="Show that you have accurately captured all time..."
-                  className="min-h-32 mb-4"
-                />
-                <div className="flex items-center gap-2 mb-4">
-                  <Button onClick={() => document.getElementById('timeTrackingFile').click()}>
-                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Evidence
-                  </Button>
-                  <input
-                    id="timeTrackingFile"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  {selectedFile && <span className="text-sm text-gray-500">{selectedFile.name}</span>}
-                </div>
-                <Button onClick={saveQualitativeData}>
-                  <Save className="mr-2 h-4 w-4" /> Save
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial Housekeeping</CardTitle>
-                <CardDescription>KPI 1.1.5: Understands and applies LNP's financial housekeeping principles and procedures</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  placeholder="Show that you have understood and applied LNP's financial housekeeping principles..."
-                  className="min-h-32 mb-4"
-                />
-                <div className="flex items-center gap-2 mb-4">
-                  <Button onClick={() => document.getElementById('financialFile').click()}>
-                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Evidence
-                  </Button>
-                  <input
-                    id="financialFile"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </div>
-                <Button onClick={saveQualitativeData}>
-                  <Save className="mr-2 h-4 w-4" /> Save
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Technology Efficiency</CardTitle>
-                <CardDescription>KPI 1.1.6: Effectively uses technology and support services to achieve the most efficient delivery</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  placeholder="Show that you have effectively used technology and support services..."
-                  className="min-h-32 mb-4"
-                />
-                <div className="flex items-center gap-2 mb-4">
-                  <Button onClick={() => document.getElementById('technologyFile').click()}>
-                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Evidence
-                  </Button>
-                  <input
-                    id="technologyFile"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </div>
-                <Button onClick={saveQualitativeData}>
-                  <Save className="mr-2 h-4 w-4" /> Save
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Proactive Work Seeking</CardTitle>
-                <CardDescription>KPI 1.1.7: Seeks work when underutilised</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  placeholder="Show that you have proactively sought work when underutilised..."
-                  className="min-h-32 mb-4"
-                />
-                <div className="flex items-center gap-2 mb-4">
-                  <Button onClick={() => document.getElementById('workSeekingFile').click()}>
-                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Evidence
-                  </Button>
-                  <input
-                    id="workSeekingFile"
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </div>
-                <Button onClick={saveQualitativeData}>
-                  <Save className="mr-2 h-4 w-4" /> Save
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {renderKpiCard(
+        '1.1.5',
+        'Financial Housekeeping',
+        'Understands and applies financial housekeeping principles and procedures'
+      )}
+      
+      {renderKpiCard(
+        '1.1.6',
+        'Technology Efficiency',
+        'Effectively uses technology and support services for efficient delivery'
+      )}
+      
+      {renderKpiCard(
+        '1.1.7',
+        'Proactive Work Seeking',
+        'Seeks work when underutilised'
+      )}
+      
+      <div className="mt-4">
+        <Button onClick={saveQualitativeData} size="lg">
+          <Save className="mr-2 h-4 w-4" /> Save All Qualitative Data
+        </Button>
+      </div>
     </div>
+  );
+};
+
+const Profitability = () => {
+  return (
+    <Tabs defaultValue="metrics" className="w-full">
+      <TabsList className="mb-4">
+        <TabsTrigger value="metrics">Key Metrics</TabsTrigger>
+        <TabsTrigger value="monthly">Monthly Progress</TabsTrigger>
+        <TabsTrigger value="qualitative">Qualitative KPIs</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="metrics">
+        <HoursSection />
+        <div className='flex flex-col gap-5'>
+          
+        </div>
+      </TabsContent>
+      <TabsContent value="monthly">
+        <div className='flex flex-col gap-5'>
+          <MonthlyBudgetSection />
+          <PromotionSection />
+        </div>
+      </TabsContent>
+      <TabsContent value="qualitative">
+        <QualitativeKPISection />
+      </TabsContent>
+    </Tabs>
   );
 };
 

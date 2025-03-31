@@ -7,21 +7,24 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron ./electron/main.cjs\"",
     "electron:build": "vite build && electron-builder --publish always",
     "lint": "eslint ."
   },
   "build": {
     "appId": "com.lnpbeyondlegal.kpi",
     "productName": "KPI Tracker",
+    "icon": "electron/assets/icon",
     "publish": {
       "provider": "github",
       "repo": "KPI",
       "owner": "nhlebelabz74",
-      "token": "${GH_TOKEN}"
+      "token": "${GH_TOKEN}",
+      "icon": "public/icon"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "electron/assets/icon.ico"
     }
   },
   "dependencies": {

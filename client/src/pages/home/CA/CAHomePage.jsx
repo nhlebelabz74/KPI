@@ -15,8 +15,11 @@ import {
 } from "@/components/ui/sidebar"
 
 import Profitability from "./sections/Profitability";
-import TechnicalSkills from "./sections/TechnicalSkills";
+import Forecasting from "./sections/Forecasting";
 import Leadership from "./sections/Leadership";
+import KnowledgeManagement from "./sections/KnowledgeManagement";
+import Teamwork from "./sections/Teamwork";
+import FirmDevelopment from "./sections/FirmDevelopment";
 
 import { useParams } from "react-router-dom";
 
@@ -31,9 +34,11 @@ const CAHomePage = () => {
 
   const sections = [
     { id: "profit", component: Profitability },
-    { id: "technical", component: TechnicalSkills },
+    { id: "forecasting", component: Forecasting },
     { id: "leadership", component: Leadership },
-    { id: "teamwork", component: Leadership },
+    { id: "knowledge", component: KnowledgeManagement },
+    { id: "teamwork", component: Teamwork },
+    { id: "firm-dev", component: FirmDevelopment },
     // Add more sections as needed
   ];
 
@@ -55,7 +60,7 @@ const CAHomePage = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Test</BreadcrumbPage>
+                  <BreadcrumbPage>Candidate Attorney</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

@@ -31,10 +31,15 @@ import {
 } from "@/components/ui/sidebar"
 
 import logout from "@/utils/logout";
+import { useNavigate } from "react-router-dom"
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar();
-  const handleLogout = logout;
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+  const navigate = useNavigate();
 
   return (
     <SidebarMenu>
@@ -74,7 +79,7 @@ export function NavUser({ user }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/${user?.role}/profile`)}>
                 <BadgeCheck />
                 Profile
               </DropdownMenuItem>

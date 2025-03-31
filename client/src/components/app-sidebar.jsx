@@ -1,5 +1,4 @@
 import * as React from "react"
-
 import { 
   LineChart,
   CalendarCheck,
@@ -10,10 +9,8 @@ import {
   BookOpen,
   Network 
 } from "lucide-react";
-
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -25,36 +22,33 @@ import {
 } from "@/components/ui/sidebar"
 import { TeamSwitcher } from "@/components/team-switcher"
 import request from "@/utils/request";
+import { useAuth } from "@/context/authContext";
 
-import CryptoJS from "crypto-js";
-import { AES } from "crypto-js";
-
-
-const getUserData = async (navigate) => {
-  const encryptedEmail = localStorage.getItem("encryptedEmail");
-  const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
-  const decryptedEmail = AES.decrypt(encryptedEmail, SECRET_KEY).toString(CryptoJS.enc.Utf8);
-
+// Modified to receive logout as a parameter
+const getUserData = async (encryptedEmail, navigate, logout) => {
   try {
     const response = await request({
       route: "/api/users/get/:email",
       type: "GET",
       routeParams: {
-        email: decryptedEmail,
+        email: encodeURIComponent(encryptedEmail),
       },
     });
 
+    const user = response.data.user;
+
     return {
-      name: response.data.name,
-      email: response.data.email,
-      avatarFallback: response.data.name.charAt(0) + response.data.surname.charAt(0),
+      name: user.name,
+      email: user.email,
+      avatarFallback: user.name.charAt(0) + user.surname.charAt(0),
+      role: user.position,
     };
   } catch (error) {
     console.error(error);
 
     if (error.sessionExpired) {
       navigate('/');
-      localStorage.removeItem("encryptedEmail");
+      logout();
     }
 
     return {
@@ -65,7 +59,6 @@ const getUserData = async (navigate) => {
   }
 };
 
-// This is sample data.
 const data = {
   navMain: [
     {
@@ -101,12 +94,12 @@ const data = {
     },
     {
       title: "Knowledge Management",
-      url: "/knowledge-management",
+      url: "/knowledge",
       icon: BookOpen,
     },
     {
       title: "Business Development",
-      url: "/business-dev",
+      url: "/business",
       icon: Network,
     },
   ]
@@ -116,11 +109,13 @@ const AppSidebar = ({ ...props }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { logout } = useAuth(); // Moved the hook call here
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const userData = await getUserData(navigate);
+        const encryptedEmail = localStorage.getItem("encryptedEmail");
+        const userData = await getUserData(encryptedEmail, navigate, logout);
         setUser(userData);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
@@ -130,10 +125,10 @@ const AppSidebar = ({ ...props }) => {
     };
 
     fetchData();
-  }, [navigate]);
+  }, [navigate, logout]);
 
   return (
-    (<Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
@@ -148,7 +143,7 @@ const AppSidebar = ({ ...props }) => {
         )}
       </SidebarFooter>
       <SidebarRail />
-    </Sidebar>)
+    </Sidebar>
   );
 }
 
