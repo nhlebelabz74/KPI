@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const compression = require('compression');
 
 const { verifyAccessToken, errorHandler } = require('./middleware');
-const { authRouter } = require('./routers');
+const { authRouter, userRouter } = require('./routers');
 const connectDB = require('./config/connectDB');
 require('dotenv').config();
 
@@ -31,6 +31,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
 
 // app.use('/api/v1', verifyAccessToken, [memberRouter, eventRouter, userRouter]);
 

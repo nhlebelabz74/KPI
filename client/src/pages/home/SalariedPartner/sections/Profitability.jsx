@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart, Bar, XAxis, CartesianGrid, RadialBarChart, PolarGrid, RadialBar, PolarRadiusAxis } from 'recharts';
 import { UploadCloud, Save, PlusCircle, MinusCircle } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { AlertDialog, AlertDialogHeader, AlertDialogTrigger, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogContent } from '@/components/ui/alert-dialog';
 
-const TOTAL_ANNUAL_BUDGET = 6000000; // 6 million. Use request function to get actual value
-const BUDGET_ACHIEVED = [850000, 430000, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // get from sharepoint as discussed
+const TOTAL_ANNUAL_BUDGET = 12000000; // 12 million. Use request function to get actual value
+const BUDGET_ACHIEVED = [1750000, 950000, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // get from sharepoint as discussed
 const MONTHLY_PERCENTAGES = [15, 7.5, 7.5, 9, 9, 9, 10, 12, 12, 5, 4]; // constant
 
 const MonthlyBudgetSection = () => {
@@ -71,14 +71,14 @@ const MonthlyBudgetSection = () => {
 }
 
 const HoursSection = () => {
-  const billableHoursTarget = 1200;
-  const nonBillableHoursTarget = 150;
-  const writtenOffHoursTarget = 0.5 * billableHoursTarget;
+  const billableHoursTarget = 1200; // Annual billable hours for Salaried Director (1.4.1)
+  const nonBillableHoursTarget = 100; // Annual non-billable for Salaried Director (1.4.2)
+  const writtenOffHoursTarget = 0.05 * billableHoursTarget; // Max 5% written off
 
   const [hoursData, setHoursData] = useState({
-    billableHours: 200,
-    nonBillableHours: 12,
-    writtenOffHours: 50
+    billableHours: 280,
+    nonBillableHours: 22,
+    writtenOffHours: 15
   });
 
   const [progress, setProgress] = useState({
@@ -136,6 +136,8 @@ const HoursSection = () => {
     });
   };
 
+  const isWriteOffExceeded = hoursData.writtenOffHours > writtenOffHoursTarget;
+
   return (
     <Card>
       <CardHeader>
@@ -146,7 +148,7 @@ const HoursSection = () => {
         <div className='flex flex-col gap-5'>
           {/* Billable Hours */}
           <div className='flex flex-col gap-2'>
-            <Label htmlFor="billableHours">Billable Hours</Label>
+            <Label htmlFor="billableHours">Billable Hours (Target: 1,200 hours)</Label>
             <Progress value={progress.billable} className="h-2 w-[75%]" />
             <div className='flex flex-row items-center gap-2'>
               <Button 
@@ -171,7 +173,7 @@ const HoursSection = () => {
 
           {/* Non-Billable Hours */}
           <div className='flex flex-col gap-2'>
-            <Label htmlFor="nonBillableHours">Non-Billable Hours</Label>
+            <Label htmlFor="nonBillableHours">Non-Billable Hours (Target: 100 hours)</Label>
             <Progress value={progress.nonBillable} className="h-2 w-[75%]" />
             <div className='flex flex-row items-center gap-2'>
               <Button 
@@ -196,8 +198,14 @@ const HoursSection = () => {
 
           {/* Written Off Hours */}
           <div className='flex flex-col gap-2'>
-            <Label htmlFor="writtenOffHours">Written Off Hours</Label>
-            <Progress value={progress.writtenOff} className="h-2 w-[75%]" />
+            <Label htmlFor="writtenOffHours">
+              Written Off Hours (Max: {writtenOffHoursTarget} hours - 5% of billable)
+            </Label>
+            <Progress 
+              value={progress.writtenOff} 
+              className={`h-2 w-[75%] ${isWriteOffExceeded ? 'bg-red-200' : ''}`}
+              indicatorClassName={isWriteOffExceeded ? 'bg-red-500' : ''}
+            />
             <div className='flex flex-row items-center gap-2'>
               <Button 
                 variant="ghost" 
@@ -207,7 +215,10 @@ const HoursSection = () => {
               >
                 <MinusCircle className="h-4 w-4" />
               </Button>
-              <p>{hoursData.writtenOffHours} hours</p>
+              <p className={isWriteOffExceeded ? 'text-red-500' : ''}>
+                {hoursData.writtenOffHours} hours
+                {isWriteOffExceeded && ' (exceeds 5% limit)'}
+              </p>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -217,6 +228,12 @@ const HoursSection = () => {
                 <PlusCircle className="h-4 w-4" />
               </Button>
             </div>
+            {isWriteOffExceeded && (
+              <p className="text-xs text-red-500">
+                Note: Justification required for written-off hours exceeding 5% of billable hours.
+                Management approval needed for capped, fixed, reduced rates, or specific service level agreements.
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
@@ -244,10 +261,38 @@ const HoursSection = () => {
   );
 };
 
-const PromotionSection = () => {
-  const promotionThreshold = TOTAL_ANNUAL_BUDGET * 3; // 3x annual budget
+const ComplianceAndPromotionSection = () => {
+  // For Salaried Director, compliance target is 100% (1.4.3.1)
+  const complianceTarget = TOTAL_ANNUAL_BUDGET * 1.0;
   const totalBilledAmount = BUDGET_ACHIEVED.reduce((acc, curr) => acc + curr, 0);
-  const progressToPromotion = (totalBilledAmount / promotionThreshold) * 100; // percentage to display
+  const progressToCompliance = (totalBilledAmount / complianceTarget) * 100;
+
+  // For promotion, target is 175% of budget (1.4.4.1)
+  const promotionThreshold = TOTAL_ANNUAL_BUDGET * 1.75;
+  const progressToPromotion = (totalBilledAmount / promotionThreshold) * 100;
+
+  // Goodwill percentage (30% of budget for compliance, 40% for promotion) (1.4.3.2, 1.4.4.2)
+  const goodwillComplianceTarget = TOTAL_ANNUAL_BUDGET * 0.3;
+  const goodwillPromotionTarget = TOTAL_ANNUAL_BUDGET * 0.4;
+  const [goodwillAmount, setGoodwillAmount] = useState(0);
+  const goodwillCompliancePercentage = (goodwillAmount / goodwillComplianceTarget) * 100;
+  const goodwillPromotionPercentage = (goodwillAmount / goodwillPromotionTarget) * 100;
+
+  // Load goodwill data
+  useEffect(() => {
+    const loadGoodwillData = async () => {
+      try {
+        const data = await window.electronAPI.readGoodwillFile();
+        if (data && data.amount) {
+          setGoodwillAmount(data.amount);
+        }
+      } catch (error) {
+        console.error('Error loading goodwill data:', error);
+      }
+    };
+
+    loadGoodwillData();
+  }, []);
 
   const chartData = [
     {
@@ -267,52 +312,109 @@ const PromotionSection = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Progress to Promotion</CardTitle>
-        <CardDescription>
-          Target: {promotionThreshold.toLocaleString()}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
-        >
-          <RadialBarChart
-            data={chartData}
-            startAngle={90}
-            endAngle={-270 * (progressToPromotion / 100) + 90}
-            innerRadius={80}
-            outerRadius={140}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress to Promotion</CardTitle>
+          <CardDescription>
+            Target: {promotionThreshold.toLocaleString()} (175% of annual budget)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[250px]"
           >
-            <PolarGrid
-              gridType="circle"
-              radialLines={false}
-              stroke="none"
-              className="first:fill-muted last:fill-background"
-              polarRadius={[86, 74]}
-            />
-            <RadialBar dataKey="value" background fill='var(--chart-1)'/>
-            <PolarRadiusAxis
-              tick={false}
-              tickLine={false}
-              axisLine={false}
-            />
-            <text
-              x="50%"
-              y="50%"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              className="text-2xl font-bold"
-              fill='var(--chart-1)'
+            <RadialBarChart
+              data={chartData}
+              startAngle={90}
+              endAngle={-270 * (progressToPromotion / 100) + 90}
+              innerRadius={80}
+              outerRadius={140}
             >
-              {progressToPromotion.toFixed(2)}%
-            </text>
-          </RadialBarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+              <PolarGrid
+                gridType="circle"
+                radialLines={false}
+                stroke="none"
+                className="first:fill-muted last:fill-background"
+                polarRadius={[86, 74]}
+              />
+              <RadialBar dataKey="value" background fill='var(--chart-1)'/>
+              <PolarRadiusAxis
+                tick={false}
+                tickLine={false}
+                axisLine={false}
+              />
+              <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="text-2xl font-bold"
+                fill='var(--chart-1)'
+              >
+                {progressToPromotion.toFixed(2)}%
+              </text>
+            </RadialBarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Compliance and Promotion Targets</CardTitle>
+          <CardDescription>
+            Compliance Target: 100% of {TOTAL_ANNUAL_BUDGET.toLocaleString()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          {/* Budget Achievement */}
+          <div className="flex flex-col gap-2">
+            <Label>Budget Achievement (100% required)</Label>
+            <Progress value={progressToCompliance} className="h-4 w-full" />
+            <div className="flex justify-between">
+              <span>Current: {totalBilledAmount.toLocaleString()}</span>
+              <span>{progressToCompliance.toFixed(1)}% of target</span>
+            </div>
+          </div>
+
+          {/* Goodwill Compliance */}
+          <div className="flex flex-col gap-2">
+            <Label>Goodwill (30% required for compliance)</Label>
+            <Progress value={goodwillCompliancePercentage} className="h-4 w-full" />
+            <div className="flex justify-between">
+              <span>Current: {goodwillAmount.toLocaleString()}</span>
+              <span>{goodwillCompliancePercentage.toFixed(1)}% of compliance target</span>
+            </div>
+          </div>
+
+          {/* Goodwill Promotion */}
+          <div className="flex flex-col gap-2">
+            <Label>Goodwill (40% required for promotion)</Label>
+            <Progress value={goodwillPromotionPercentage} className="h-4 w-full" />
+            <div className="flex justify-between">
+              <span>Current: {goodwillAmount.toLocaleString()}</span>
+              <span>{goodwillPromotionPercentage.toFixed(1)}% of promotion target</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mt-2">
+            <Button 
+              onClick={() => {
+                const amount = prompt("Enter goodwill amount:");
+                if (amount && !isNaN(parseFloat(amount))) {
+                  const newAmount = parseFloat(amount);
+                  setGoodwillAmount(newAmount);
+                  window.electronAPI.saveGoodwillFile({ amount: newAmount });
+                }
+              }}
+            >
+              Update Goodwill Amount
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
@@ -330,7 +432,7 @@ const QualitativeKPISection = () => {
         setTextInputs(savedData);
         
         // Check which PDFs exist
-        const kpiNumbers = ['1.1.4', '1.1.5', '1.1.6', '1.1.7'];
+        const kpiNumbers = ['1.4.6', '1.4.7', '1.4.8', '1.4.9', '1.4.10', '1.4.11', '1.4.12', '1.4.13', '1.4.14'];
         const pdfStatus = {};
         
         for (const kpiNumber of kpiNumbers) {
@@ -429,27 +531,57 @@ const QualitativeKPISection = () => {
   return (
     <div className="grid grid-cols-1 gap-6">
       {renderKpiCard(
-        '1.1.4',
-        'Time Tracking Accuracy',
-        'Accurately captures all time (billable and non-billable)'
+        '1.4.6',
+        'Manages Department Financial Performance',
+        'Achieves own and assists others in managing department\'s financial performance targets'
       )}
       
       {renderKpiCard(
-        '1.1.5',
-        'Financial Housekeeping',
-        'Understands and applies financial housekeeping principles and procedures'
+        '1.4.7',
+        'Develop Team Expertise',
+        'Consistently achieves their rates to reflect their expertise'
       )}
       
       {renderKpiCard(
-        '1.1.6',
-        'Technology Efficiency',
-        'Effectively uses technology and support services for efficient delivery'
+        '1.4.8',
+        'Efficient Resource Management',
+        'Undertakes sector best work and ensures other work is carried out at the most profitable level/time permitted'
       )}
       
       {renderKpiCard(
-        '1.1.7',
-        'Proactive Work Seeking',
-        'Seeks work when underutilised'
+        '1.4.9',
+        'Profitability Analysis',
+        'Supports department in scoping work efficiently and checking matter profitability, and has difficult conversations with clients where necessary'
+      )}
+      
+      {renderKpiCard(
+        '1.4.10',
+        'Pricing Expertise',
+        'Demonstrates a thorough understanding of pricing approach/parameters and uses available resources to maximize results'
+      )}
+      
+      {renderKpiCard(
+        '1.4.11',
+        'Business Plan Implementation',
+        'Delivers key aspects of the department\'s business plan alongside high personal financial performance'
+      )}
+      
+      {renderKpiCard(
+        '1.4.12',
+        'Cross-Department Collaboration',
+        'Utilizes resources in own and other departments to ensure a collaborative profitable approach'
+      )}
+      
+      {renderKpiCard(
+        '1.4.13',
+        'Risk Management',
+        'Takes responsibility for risk and resourcing of matters and SLA\'s and addresses issues of concern'
+      )}
+      
+      {renderKpiCard(
+        '1.4.14',
+        'Delegation Skills',
+        'Takes responsibility and HR priorities'
       )}
       
       <div className="mt-4">
@@ -471,17 +603,18 @@ const Profitability = () => {
       </TabsList>
 
       <TabsContent value="metrics">
-        <HoursSection />
         <div className='flex flex-col gap-5'>
-          
+          <HoursSection />
         </div>
       </TabsContent>
+      
       <TabsContent value="monthly">
         <div className='flex flex-col gap-5'>
           <MonthlyBudgetSection />
-          <PromotionSection />
+          <ComplianceAndPromotionSection />
         </div>
       </TabsContent>
+      
       <TabsContent value="qualitative">
         <QualitativeKPISection />
       </TabsContent>

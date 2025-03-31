@@ -23,9 +23,7 @@ import FirmDevelopment from "./sections/FirmDevelopment";
 
 import { useParams } from "react-router-dom";
 
-// import { Skeleton } from "@/components/ui/skeleton"
-
-const CAHomePage = () => {
+const SDPHomePage = () => {
   let { content } = useParams();
 
   if (!content) {
@@ -60,7 +58,7 @@ const CAHomePage = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Candidate Attorney</BreadcrumbPage>
+                  <BreadcrumbPage>Salaried Director and Partner</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -82,4 +80,4 @@ const CAHomePage = () => {
   );
 }
 
-export default CAHomePage;
+export default SDPHomePage;

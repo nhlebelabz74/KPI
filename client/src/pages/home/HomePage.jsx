@@ -13,25 +13,20 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-
-import { useParams } from "react-router-dom";
-
-// import { Skeleton } from "@/components/ui/skeleton"
+import { useParams } from "react-router-dom"
 
 const HomePage = () => {
-  // const { email } = useParams();
-  // let { content } = useParams();
+  let { role } = useParams()
 
-  // if (!content) {
-  //   content = "";
-  // }
+  if (!role) {
+    role = ""
+  }
 
   return (
-    (<SidebarProvider>
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header
-          className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
@@ -39,29 +34,29 @@ const HomePage = () => {
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
-                    KPI's
+                    Dashboard
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Test</BreadcrumbPage>
+                  <BreadcrumbPage>{role}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
-        {/* create components  */}
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
+        
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 justify-center items-center">
+          <div className="rounded-xl bg-chart-2 p-6 shadow-sm">
+            <h1 className="mb-4 text-3xl font-bold text-primary">Welcome to Your Dashboard</h1>
+            <p className="mb-6 text-lg text-foreground">
+              We're glad to see you back. Here you can track your performance, manage your KPIs, and stay updated with important metrics.
+            </p>
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
         </div>
       </SidebarInset>
-    </SidebarProvider>)
-  );
+    </SidebarProvider>
+  )
 }
 
-export default HomePage;
+export default HomePage

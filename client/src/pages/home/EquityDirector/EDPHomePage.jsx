@@ -20,12 +20,11 @@ import Leadership from "./sections/Leadership";
 import KnowledgeManagement from "./sections/KnowledgeManagement";
 import Teamwork from "./sections/Teamwork";
 import FirmDevelopment from "./sections/FirmDevelopment";
+import TechnicalSkills from "./sections/TechnicalSkills";
 
 import { useParams } from "react-router-dom";
 
-// import { Skeleton } from "@/components/ui/skeleton"
-
-const CAHomePage = () => {
+const EDPHomePage = () => {
   let { content } = useParams();
 
   if (!content) {
@@ -39,6 +38,10 @@ const CAHomePage = () => {
     { id: "knowledge", component: KnowledgeManagement },
     { id: "teamwork", component: Teamwork },
     { id: "firm-dev", component: FirmDevelopment },
+    { id: "technical", component: TechnicalSkills },
+    // { id: "communication", component: Leadership },
+    // { id: "innovation", component: Leadership },
+    // { id: "client-service", component: Leadership },
     // Add more sections as needed
   ];
 
@@ -60,7 +63,7 @@ const CAHomePage = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Candidate Attorney</BreadcrumbPage>
+                  <BreadcrumbPage>Equity Director and Partner</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -82,4 +85,4 @@ const CAHomePage = () => {
   );
 }
 
-export default CAHomePage;
+export default EDPHomePage;
