@@ -21,6 +21,7 @@ import KnowledgeManagement from "./sections/KnowledgeManagement";
 import Teamwork from "./sections/Teamwork";
 import FirmDevelopment from "./sections/FirmDevelopment";
 import TechnicalSkills from "./sections/TechnicalSkills";
+import BusinessDevelopment from "./sections/BusinessDevelopment";
 
 import { useParams } from "react-router-dom";
 
@@ -39,10 +40,7 @@ const EDPHomePage = () => {
     { id: "teamwork", component: Teamwork },
     { id: "firm-dev", component: FirmDevelopment },
     { id: "technical", component: TechnicalSkills },
-    // { id: "communication", component: Leadership },
-    // { id: "innovation", component: Leadership },
-    // { id: "client-service", component: Leadership },
-    // Add more sections as needed
+    { id: "business", component: BusinessDevelopment },
   ];
 
   return (
