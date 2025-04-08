@@ -46,6 +46,7 @@ app.get('/api/download', (req, res) => {
     'Content-Type': 'application/octet-stream',
     'Content-Disposition': 'attachment; filename=KPI-Tracker-Setup-1.0.0.exe',
     'Cache-Control': 'public, max-age=86400',
+    'X-Content-Type-Options': 'nosniff',
     'Expires': new Date(Date.now() + 86400000).toUTCString()
   });
   
