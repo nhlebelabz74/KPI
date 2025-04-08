@@ -60,12 +60,16 @@ app.get('/api/download', (req, res) => {
       res.status(500).send('Error downloading file');
     }
   });
+
+  // successful download
+  fileStream.on('finish', () => {
+    console.log('File download completed successfully');
+    res.status(200).send("Download completed successfully");
+  });
 });
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', verifyAccessToken, [userRouter, responseRouter]);
-
-// app.use('/api/v1', verifyAccessToken, [memberRouter, eventRouter, userRouter]);
 
 app.get('/', (req, res) => {
     res.send('Hello World');
