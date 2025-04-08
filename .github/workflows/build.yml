@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important for electron-builder to get tags
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,6 +31,9 @@ jobs:
 
       - name: Build and publish
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Use default secret
-        run: npm run electron:build
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          npm run electron:build
         working-directory: ./client
