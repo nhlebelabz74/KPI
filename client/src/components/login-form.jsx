@@ -73,27 +73,29 @@ const LoginForm = ({ className, ...props }) => {
 
   const sendResetPasswordLink = async () => {
     // try to send the email
-    try {
-      await request({
-        type: 'POST',
-        route: '/auth/forgot-password',
-        body: {
-          email: resetPasswordEmail
-        }
-      });
+    setErrorMessage("Functionality does not exist yet");
+    setErrorDialogOpen(true);
+    // try {
+    //   await request({
+    //     type: 'POST',
+    //     route: '/auth/forgot-password',
+    //     body: {
+    //       email: resetPasswordEmail
+    //     }
+    //   });
 
-      toast("Email sent successfully", {
-        description: "Check your inbox and click on the link"
-      });
+    //   toast("Email sent successfully", {
+    //     description: "Check your inbox and click on the link"
+    //   });
 
-      navigate(`/reset-password/:${resetPasswordEmail}`);
-    }
-    catch (error) {
-      console.error(error);
+    //   navigate(`/reset-password/:${resetPasswordEmail}`);
+    // }
+    // catch (error) {
+    //   console.error(error);
 
-      setErrorMessage(error?.message || "Something went wrong when we tried to email you");
-      setErrorDialogOpen(true);
-    }
+    //   setErrorMessage(error?.message || "Something went wrong when we tried to email you");
+    //   setErrorDialogOpen(true);
+    // }
   }
 
   const navigate = useNavigate();
@@ -325,14 +327,6 @@ const LoginForm = ({ className, ...props }) => {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? "Signing in..." : "Login"}
             </Button>
-
-            {/* Sign Up Link */}
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link to="/register" className="underline underline-offset-4 hover:text-primary/90">
-                Sign up
-              </Link>
-            </div>
           </div>
         </form>
       </Form>
