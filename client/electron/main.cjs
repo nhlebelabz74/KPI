@@ -16,7 +16,7 @@ autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'nhlebelabz74',
   repo: 'KPI',
-  private: false,
+  private: true,
   releaseType: 'release',
   token: process.env.GH_TOKEN,
 });

@@ -32,7 +32,9 @@
       "provider": "github",
       "repo": "KPI",
       "owner": "nhlebelabz74",
-      "releaseType": "release"
+      "private": true,
+      "releaseType": "release",
+      "token": "$GH_TOKEN"
     },
     "win": {
       "target": "nsis",
