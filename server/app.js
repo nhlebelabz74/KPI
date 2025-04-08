@@ -34,7 +34,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.get('/api/download', (req, res) => {
-  const exePath = path.join(__dirname, '../release/KPI-Tracker-Setup-1.0.0.exe');
+  const exePath = path.join(__dirname, 'release', 'KPI-Tracker-Setup-1.0.0.exe');
   
   // Check if file exists first
   if (!fs.existsSync(exePath)) {
