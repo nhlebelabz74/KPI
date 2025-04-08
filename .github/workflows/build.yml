@@ -3,24 +3,19 @@ name: Build and Release Electron App
 on:
   push:
     tags:
-      - 'v*.*.*'  # Trigger on version tags
+      - 'v*.*.*'
 
 permissions:
-  contents: write  # Needed for creating releases
+  contents: write
 
 jobs:
   build:
-    runs-on: windows-latest  # Use Windows for building Windows app
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          lfs: true  # Enable Git LFS
 
-      - name: Checkout LFS objects
-        run: git lfs checkout
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -34,6 +29,6 @@ jobs:
 
       - name: Build and publish
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Access the secret
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Use default secret
         run: npm run electron:build
         working-directory: ./client
