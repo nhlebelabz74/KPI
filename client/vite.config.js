@@ -26,39 +26,14 @@ export default defineConfig({
         comments: false,
       },
     },
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 2500,
     rollupOptions: {
       output: {
-        // Simpler chunking strategy to avoid React hooks dependency issues
-        manualChunks: (id) => {
-          // Keep all React related packages together in one chunk
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || 
-                id.includes('react-dom') || 
-                id.includes('react-router') ||
-                id.includes('react-hook-form') ||
-                id.includes('hookform') ||
-                id.includes('@radix-ui')) {
-              return 'vendor-react'; // All React and UI components in one chunk
-            }
-            
-            // Other large libraries in separate chunks
-            if (id.includes('recharts') || id.includes('d3')) {
-              return 'vendor-charts';
-            }
-            
-            // Everything else from node_modules
-            return 'vendor-others';
-          }
-          
-          // Your application code
-          if (id.includes('/src/')) {
-            return 'app';
-          }
-        },
+        // Disable manual chunking completely
+        manualChunks: undefined,
+        
         // Asset naming
         assetFileNames: 'assets/[name]-[hash][extname]',
-        chunkFileNames: 'chunks/[name]-[hash].js',
         entryFileNames: 'entries/[name]-[hash].js',
       }
     },
