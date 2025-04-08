@@ -1,0 +1,8 @@
+client/dist/KPI[[:space:]]Tracker[[:space:]]Setup[[:space:]]1.0.0.exe filter=lfs diff=lfs merge=lfs -text
+client/dist/win-unpacked/resources/app.asar filter=lfs diff=lfs merge=lfs -text
+client/dist/win-unpacked/KPI[[:space:]]Tracker.exe filter=lfs diff=lfs merge=lfs -text
+client/dist/** filter=lfs diff=lfs merge=lfs -text
+client/dist/win-unpacked/** filter=lfs diff=lfs merge=lfs -text
+client/dist/win-unpacked/**/* filter=lfs diff=lfs merge=lfs -text
+client/dist/*.exe filter=lfs diff=lfs merge=lfs -text
+*.asar filter=lfs diff=lfs merge=lfs -text
