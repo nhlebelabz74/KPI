@@ -31,7 +31,8 @@
     "publish": {
       "provider": "github",
       "repo": "KPI",
-      "owner": "nhlebelabz74"
+      "owner": "nhlebelabz74",
+      "releaseType": "release"
     },
     "win": {
       "target": "nsis",
