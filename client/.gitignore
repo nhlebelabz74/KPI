@@ -10,7 +10,6 @@ lerna-debug.log*
 node_modules
 release
 .env
-dist
 *.local
 
 # Editor directories and files
