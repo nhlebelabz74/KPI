@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/', // Changed from './' to '/' for web deployment
+  base: '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, "./src"),
@@ -29,41 +29,39 @@ export default defineConfig({
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        // Properly chunk your build
+        // Simpler chunking strategy to avoid React hooks dependency issues
         manualChunks: (id) => {
-          // Create a vendors chunk containing node_modules
+          // Keep all React related packages together in one chunk
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
+            if (id.includes('react') || 
+                id.includes('react-dom') || 
+                id.includes('react-router') ||
+                id.includes('react-hook-form') ||
+                id.includes('hookform') ||
+                id.includes('@radix-ui')) {
+              return 'vendor-react'; // All React and UI components in one chunk
             }
+            
+            // Other large libraries in separate chunks
             if (id.includes('recharts') || id.includes('d3')) {
               return 'vendor-charts';
             }
-            if (id.includes('radix-ui')) {
-              return 'vendor-ui';
-            }
-            return 'vendor';
+            
+            // Everything else from node_modules
+            return 'vendor-others';
           }
-          // Create a chunk for your app's main code
+          
+          // Your application code
           if (id.includes('/src/')) {
-            if (id.includes('/components/')) {
-              return 'components';
-            }
-            if (id.includes('/pages/')) {
-              return 'pages';
-            }
-            if (id.includes('/hooks/')) {
-              return 'hooks';
-            }
+            return 'app';
           }
         },
-        // Ensure assets are hashed properly
+        // Asset naming
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'chunks/[name]-[hash].js',
         entryFileNames: 'entries/[name]-[hash].js',
       }
     },
-    // Ensure correct source maps in production
     sourcemap: process.env.NODE_ENV !== 'production',
   }
 });
