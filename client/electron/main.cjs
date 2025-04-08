@@ -49,15 +49,16 @@ const createWindow = () => {
     win.loadURL('http://localhost:5173');
     win.webContents.openDevTools();
   } else {
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    if (fs.existsSync(indexPath)) {
-      win.loadFile(indexPath);
-      log.info('Loaded index.html from:', indexPath);
-      win.webContents.openDevTools(); // Open DevTools in production for debugging
-    } else {
-      log.error('Failed to load index.html');
-      win.loadURL('about:blank');
-    }
+    win.loadURL('https://kpi-tracker-lnp.netlify.app');
+    // const indexPath = path.join(__dirname, '../dist/index.html');
+    // if (fs.existsSync(indexPath)) {
+    //   win.loadFile(indexPath);
+    //   log.info('Loaded index.html from:', indexPath);
+    //   win.webContents.openDevTools(); // Open DevTools in production for debugging
+    // } else {
+    //   log.error('Failed to load index.html');
+    //   win.loadURL('about:blank');
+    // }
   }
 
   // Handle external links
