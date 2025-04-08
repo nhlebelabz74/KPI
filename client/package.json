@@ -33,8 +33,7 @@
       "repo": "KPI",
       "owner": "nhlebelabz74",
       "private": false,
-      "releaseType": "release",
-      "token": "$GH_TOKEN"
+      "releaseType": "release"
     },
     "win": {
       "target": "nsis",
