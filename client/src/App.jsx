@@ -2,7 +2,7 @@ import LoginPage from "@/pages/login/LoginPage";
 // import RegisterPage from "@/pages/RegisterPage";
 import HomePage from "@/pages/home/HomePage";
 import ProfilePage from "@/pages/profile/ProfilePage";
-// import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import ForgotPasswordPage from "@/pages/forgotPassword/ForgotPasswordPage";
 
 import CAHomePage from "@/pages/home/CA/CAHomePage";
 import AssociateHomePage from "@/pages/home/Associate/AssociateHomePage";
@@ -37,8 +37,7 @@ const App = () => {
         </div>
         <Routes>
           <Route path='/' element={ <LoginPage /> } />
-          {/* <Route path='/register' element={ <RegisterPage /> } />
-          <Route path='/reset-password/:email' element={ <ResetPasswordPage /> }/> */}
+          <Route path='/reset-password/:email' element={ <ForgotPasswordPage /> }/>
           
           <Route path='/home' element={
             <ProtectedRoute>

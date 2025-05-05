@@ -61,6 +61,12 @@ const SAHomePage = () => {
                 <BreadcrumbItem>
                   <BreadcrumbPage>Senior Associate</BreadcrumbPage>
                 </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">
+                    {content.charAt(0).toUpperCase() + content.slice(1)}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>

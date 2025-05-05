@@ -63,6 +63,12 @@ const CAHomePage = () => {
                 <BreadcrumbItem>
                   <BreadcrumbPage>Candidate Attorney</BreadcrumbPage>
                 </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">
+                    {content.charAt(0).toUpperCase() + content.slice(1)}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
