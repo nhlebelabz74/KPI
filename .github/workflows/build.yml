@@ -51,11 +51,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Locate Setup Installer
-        id: find-installer
-        run: |
-          $installerPath = Get-ChildItem -Path ./client -Recurse -Filter KPI-Tracker-v*-Setup.exe | Select-Object -First 1
-          echo "installer_path=$($installerPath.FullName)" >> $env:GITHUB_OUTPUT
+      # - name: Locate Setup Installer
+      #   id: find-installer
+      #   run: |
+      #     $installerPath = Get-ChildItem -Path ./client -Recurse -Filter KPI-Tracker-v*-Setup.exe | Select-Object -First 1
+      #     echo "installer_path=$($installerPath.FullName)" >> $env:GITHUB_OUTPUT
             
       # - name: Upload Artifacts
       #   uses: actions/upload-release-asset@v1
@@ -67,15 +67,15 @@ jobs:
       #     asset_name: KPI-Tracker-${{ github.ref_name }}.exe
       #     asset_content_type: application/octet-stream
 
-      - name: Upload Installer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.find-installer.outputs.installer_path }}
-          asset_name: KPI-Tracker-Setup-${{ github.ref_name }}.exe
-          asset_content_type: application/octet-stream
+      # - name: Upload Installer
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create-release.outputs.upload_url }}
+      #     asset_path: ${{ steps.find-installer.outputs.installer_path }}
+      #     asset_name: KPI-Tracker-Setup-${{ github.ref_name }}.exe
+      #     asset_content_type: application/octet-stream
 
       - name: Publish Release
         run: gh release edit ${{ github.ref_name }} --draft=false
