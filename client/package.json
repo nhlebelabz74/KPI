@@ -28,6 +28,13 @@
       "dist/**/*",
       "electron/**/*.cjs"
     ],
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "KPI-Tracker-${version}-Setup.${ext}"
+    },
     "publish": {
       "provider": "github",
       "repo": "KPI",

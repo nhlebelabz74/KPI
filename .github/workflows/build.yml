@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for electron-builder to detect tags
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -40,26 +40,36 @@ jobs:
 
       - name: Create Release
         id: create-release
-        shell: pwsh  # Explicitly use PowerShell
+        shell: pwsh
         run: |
           $response = gh release create ${{ github.ref_name }} `
             --title "${{ github.ref_name }}" `
             --notes "Automated release" `
             --draft
           $upload_url = gh release view ${{ github.ref_name }} --json uploadUrl --jq .uploadUrl
-          echo "::set-output name=upload_url::$upload_url"
+          echo "upload_url=$upload_url" >> $env:GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Upload Artifacts
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create-release.outputs.upload_url }}
-      #     asset_path: ./client/dist/*.exe  # Adjust to your actual build path
-      #     asset_name: MyApp-${{ github.ref_name }}.exe
-      #     asset_content_type: application/octet-stream
+      - name: Upload Artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./client/release/*.exe
+          asset_name: KPI-Tracker-${{ github.ref_name }}.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ./client/release/*.Setup.exe
+          asset_name: KPI-Tracker-Setup-${{ github.ref_name }}.exe
+          asset_content_type: application/octet-stream
 
       - name: Publish Release
         run: gh release edit ${{ github.ref_name }} --draft=false
