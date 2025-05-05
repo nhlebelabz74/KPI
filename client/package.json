@@ -47,7 +47,7 @@
       "icon": "electron/assets/icon.ico"
     },
     "directories": {
-      "output": "dist",
+      "output": "release",
       "buildResources": "electron/assets"
     }
   },

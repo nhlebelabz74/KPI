@@ -57,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./client/dist/*.exe
+          asset_path: ./client/release/KPI-Tracker.exe
           asset_name: KPI-Tracker-${{ github.ref_name }}.exe
           asset_content_type: application/octet-stream
 
@@ -67,7 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: ./client/release/*.Setup.exe
+          asset_path: ./client/release/KPI-Tracker-${{ github.ref_name }}-Setup.exe
           asset_name: KPI-Tracker-Setup-${{ github.ref_name }}.exe
           asset_content_type: application/octet-stream
 
