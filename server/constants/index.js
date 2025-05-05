@@ -59,7 +59,6 @@ const ResetPasswordEmailHTML = ({ code }) => (
         .logo {
           max-width: 150px;
           height: auto;
-          margin-bottom: 15px;
         }
         .content {
           padding: 30px 25px;
