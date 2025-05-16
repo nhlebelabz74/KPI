@@ -36,9 +36,8 @@ const userSchema = new mongoose.Schema({
     default: []
   },
   supervisor: { // email of the supervisor
-    type: String,
-    default: '',
-    trim: true,
+    type: [String],
+    default: ['']
   },
   budget: {
     type: mongoose.Schema.Types.Decimal128, // For precise decimal storage

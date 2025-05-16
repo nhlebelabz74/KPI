@@ -36,7 +36,6 @@ const createUsers = asyncWrapper(async (req, res) => {
   const { users } = req.body;
 
   users.map(async (user) => {
-    // Save the user with the encrypted email
     await User.create({ ...user });
   });
 
