@@ -33,43 +33,43 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// app.get('/api/download', (req, res) => {
-//   const exePath = path.join(__dirname, 'release', 'KPI-Tracker-Setup-1.0.0.exe');
+app.get('/api/download', (req, res) => {
+  const exePath = path.join(__dirname, 'release', 'KPI-Tracker-Setup-1.1.0.exe');
   
-//   // Check if file exists first
-//   if (!fs.existsSync(exePath)) {
-//     return res.status(404).send('Installer file not found');
-//   }
+  // Check if file exists first
+  if (!fs.existsSync(exePath)) {
+    return res.status(404).send('Installer file not found');
+  }
   
-//   // Set appropriate headers
-//   res.set({
-//     'Content-Type': 'application/octet-stream',
-//     'Content-Disposition': 'attachment; filename=KPI-Tracker-Setup-1.0.0.exe',
-//     'Cache-Control': 'public, max-age=86400',
-//     'X-Content-Type-Options': 'nosniff',
-//     'Expires': new Date(Date.now() + 86400000).toUTCString()
-//   });
+  // Set appropriate headers
+  res.set({
+    'Content-Type': 'application/octet-stream',
+    'Content-Disposition': 'attachment; filename=KPI-Tracker-Setup-1.1.0.exe',
+    'Cache-Control': 'public, max-age=86400',
+    'X-Content-Type-Options': 'nosniff',
+    'Expires': new Date(Date.now() + 86400000).toUTCString()
+  });
   
-//   // Stream the file instead of loading it all into memory
-//   const fileStream = fs.createReadStream(exePath);
-//   fileStream.pipe(res);
+  // Stream the file instead of loading it all into memory
+  const fileStream = fs.createReadStream(exePath);
+  fileStream.pipe(res);
   
-//   fileStream.on('error', (err) => {
-//     console.error('Error streaming file:', err);
-//     if (!res.headersSent) {
-//       res.status(500).send('Error downloading file');
-//     }
-//   });
+  fileStream.on('error', (err) => {
+    console.error('Error streaming file:', err);
+    if (!res.headersSent) {
+      res.status(500).send('Error downloading file');
+    }
+  });
 
-//   // successful download
-//   fileStream.on('finish', () => {
-//     console.log('File download completed successfully');
-//     res.status(200).send("Download completed successfully");
-//   });
-// });
+  // successful download
+  fileStream.on('finish', () => {
+    console.log('File download completed successfully');
+    res.status(200).send("Download completed successfully");
+  });
+});
 
 app.use('/api/auth', authRouter);
-app.use('/api/users', verifyAccessToken, [userRouter, responseRouter]);
+app.use('/api/users', /*verifyAccessToken,*/ [userRouter, responseRouter]);
 
 app.get('/', (req, res) => {
     res.send('Hello World');

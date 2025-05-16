@@ -35,6 +35,11 @@ const userSchema = new mongoose.Schema({
     type: Array,
     default: []
   },
+  supervisor: { // email of the supervisor
+    type: String,
+    default: '',
+    trim: true,
+  },
   budget: {
     type: mongoose.Schema.Types.Decimal128, // For precise decimal storage
     default: 0.00,
@@ -47,6 +52,6 @@ const userSchema = new mongoose.Schema({
 }, {
   toJSON: { getters: true }, // Ensure getters are applied when converting to JSON
   toObject: { getters: true } // Ensure getters are applied when converting to plain objects
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
