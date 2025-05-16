@@ -77,11 +77,11 @@ export function NavUser({ user }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem /*onClick={() => navigate(`/${user?.role}/profile`)} */>
+              <DropdownMenuItem onClick={() => navigate(`/${user?.role}/profile`)}>
                 <BadgeCheck />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/appraisal")}>
+              <DropdownMenuItem /*onClick={() => navigate("/appraisal")}*/>
                 <BookOpen />
                 Appraisal Form
               </DropdownMenuItem>
