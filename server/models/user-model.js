@@ -50,7 +50,8 @@ const userSchema = new mongoose.Schema({
   },
 }, {
   toJSON: { getters: true }, // Ensure getters are applied when converting to JSON
-  toObject: { getters: true } // Ensure getters are applied when converting to plain objects
-}, { timestamps: true });
+  toObject: { getters: true }, // Ensure getters are applied when converting to plain objects
+  timestamps: true
+});
 
 module.exports = mongoose.model('User', userSchema);
