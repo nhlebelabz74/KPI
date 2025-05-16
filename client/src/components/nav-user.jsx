@@ -2,11 +2,9 @@
 
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
-  Sparkles,
+  BookOpen
 } from "lucide-react"
 
 import {
@@ -79,13 +77,13 @@ export function NavUser({ user }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => navigate(`/${user?.role}/profile`)}>
+              <DropdownMenuItem /*onClick={() => navigate(`/${user?.role}/profile`)} */>
                 <BadgeCheck />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
+              <DropdownMenuItem onClick={() => navigate("/appraisal")}>
+                <BookOpen />
+                Appraisal Form
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

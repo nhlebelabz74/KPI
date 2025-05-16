@@ -3,12 +3,13 @@ import LoginPage from "@/pages/login/LoginPage";
 import HomePage from "@/pages/home/HomePage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import ForgotPasswordPage from "@/pages/forgotPassword/ForgotPasswordPage";
+import AppraisalPage from "@/pages/appraisal/AppraisalPage";
 
 import CAHomePage from "@/pages/home/CA/CAHomePage";
 import AssociateHomePage from "@/pages/home/Associate/AssociateHomePage";
 import SAHomePage from "@/pages/home/SeniorAssociate/SAHomePage";
-import SDPHomePage from "./pages/home/SalariedPartner/SDPHomePage";
-import EDPHomePage from "./pages/home/EquityDirector/EDPHomePage";
+import SDPHomePage from "@/pages/home/SalariedPartner/SDPHomePage";
+import EDPHomePage from "@/pages/home/EquityDirector/EDPHomePage";
 
 import { Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme/theme-provider';
@@ -77,6 +78,11 @@ const App = () => {
           <Route path='/:role/profile' element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path='/appraisal' element={
+            <ProtectedRoute>
+              <AppraisalPage />
             </ProtectedRoute>
           } />
         </Routes>

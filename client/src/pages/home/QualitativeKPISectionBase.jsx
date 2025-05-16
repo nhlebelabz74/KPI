@@ -253,7 +253,6 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
         setRadioValues(newState.radioValues);
         setExistingDocuments(newState.docStatus);
         setDocumentMetadata(newState.docMetadata);
-        
       } catch (err) {
         console.error('Error loading saved data:', err);
         setError('Failed to load saved data');

@@ -3,13 +3,82 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/authContext";
 import request from "@/utils/request";
+import {
+  Dialog, 
+  DialogHeader,
+  DialogContent, 
+  DialogTitle, 
+  DialogTrigger, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AES } from "crypto-js";
+
+const SuperviseeCard = ({ supervisee }) => {
+  // get progress of supervisee
+  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const { email, name, surname } = supervisee;
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const response = await request({
+          route: "/users/get/info/:email",
+          type: "GET",
+          routeParams: {
+            email: encodeURIComponent(email),
+          },
+        });
+
+        const KPIs = await request({
+          route: "/users/get/completedKPIs/:email",
+          type: "GET",
+          routeParams: {
+            email: encodeURIComponent(email),
+          },
+        }); // array of all KPI numbers
+        
+        const defaultKPIdata = response.data.kpiNumbers;
+        const incompleteKPIs = defaultKPIdata.filter(kpi => !KPIs.data.completedKPIs.includes(kpi));
+        const progressPercentage = ((defaultKPIdata.length - incompleteKPIs.length) / defaultKPIdata.length) * 100;
+
+        setProgress(progressPercentage.toFixed(2)); // Set progress to 2 decimal places
+      } catch (error) {
+        console.error("Failed to fetch progress:", error);
+        if (error.sessionExpired) {
+          navigate('/');
+          logout();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgress();
+  });
+
+  return (
+    <div className="flex justify-between items-center p-3 mb-2 border dark:border-primary cursor-pointer rounded-2xl font-semibold w-full">
+      <p>{name} {surname}</p>
+      <p className={`${progress < 50 ? "text-red-900" : (progress < 100 ? "text-orange-400" : "text-green-600")}`}>{progress}%</p>
+    </div>
+  );
+}
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [supervisees, setSupervisees] = useState([]);
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -19,16 +88,29 @@ const ProfilePage = () => {
         const encryptedEmail = localStorage.getItem("encryptedEmail");
         const userData = await getUserData(encryptedEmail, navigate, logout);
         setUser(userData);
+
+        const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
+  
+        // Fetch detailed data for each supervisee
+        const superviseeData = await Promise.all(
+          userData.supervisees.map((supervisee) =>
+            getUserData(AES.encrypt(supervisee, SECRET_KEY).toString(), navigate, logout)
+          )
+        );
+        
+        // remove the "test" user if found
+        const filteredSuperviseeData = superviseeData.filter(s => s.name !== "Test" && s.surname !== "User");
+        setSupervisees(filteredSuperviseeData);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, [navigate, logout]);
-
+  
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -39,8 +121,8 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 flex items-center">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen p-8 flex items-center flex-row gap-4 justify-center max-md:flex-col">
+      <div className="max-w-4xl">
         <Card className="w-full border shadow-lg dark:border-primary">
           <CardHeader className="border-b dark:border-primary">
             <div className="flex items-center justify-between">
@@ -77,11 +159,21 @@ const ProfilePage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {supervisees.length > 0 && (
+        <div className="p-6 flex flex-col gap-4 border dark:border-primary rounded-2xl shadow-lg max-w-xl w-2/5">
+          <h3 className="text-lg font-medium">Supervisees</h3>
+          <ScrollArea className="w-full mx-auto h-55 flex gap-4">
+            {supervisees.map((s) => (
+              <SuperviseeCard key={s.email} supervisee={s} />
+            ))}
+          </ScrollArea>
+        </div>
+      )}
     </div>
   );
 };
 
-// Same getUserData function from the original file
 const getUserData = async (encryptedEmail, navigate, logout) => {
   try {
     const response = await request({
@@ -99,7 +191,8 @@ const getUserData = async (encryptedEmail, navigate, logout) => {
       surname: user.surname,
       email: user.email,
       avatarFallback: user.name.charAt(0) + user.surname.charAt(0),
-      role: user.position
+      role: user.position,
+      supervisees: user.supervising,
     };
   } catch (error) {
     console.error(error);
