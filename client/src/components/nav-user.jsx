@@ -81,7 +81,7 @@ export function NavUser({ user }) {
                 <BadgeCheck />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem /*onClick={() => navigate("/appraisal")}*/>
+              <DropdownMenuItem onClick={() => navigate("/appraisal")}>
                 <BookOpen />
                 Appraisal Form
               </DropdownMenuItem>

@@ -7,22 +7,69 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { useAuth } from "@/context/authContext";
 import request from "@/utils/request";
 import {
-  Dialog, 
-  DialogHeader,
-  DialogContent, 
-  DialogTitle, 
-  DialogTrigger, 
-  DialogDescription, 
-  DialogFooter 
-} from "@/components/ui/dialog";
+  AlertDialog, 
+  AlertDialogHeader,
+  AlertDialogContent, 
+  AlertDialogTitle, 
+  AlertDialogTrigger, 
+  AlertDialogFooter,
+  AlertDialogCancel, 
+  AlertDialogAction
+} from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AES } from "crypto-js";
+
+import { Progress } from "@/components/ui/progress";
+import CryptoJS, { AES } from "crypto-js";
 
 const SuperviseeCard = ({ supervisee }) => {
   // get progress of supervisee
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [kpiProgressCards, setKpiProgressCards] = useState([]);
+
+  // get email from local storage
+  const encryptedEmail = localStorage.getItem("encryptedEmail");
+  const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY || "default-secret-key";
+  const decryptedEmail = AES.decrypt(encryptedEmail, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+
+  const cards = [
+    {
+      title: "Profitability",
+      number: 1,
+      progress: 0
+    },
+    {
+      title: "Teamwork",
+      number: 2,
+      progress: 0
+    },
+    {
+      title: "Technical Skills",
+      number: 3,
+      progress: 0
+    },
+    {
+      title: "Leadership",
+      number: 5,
+      progress: 0
+    },
+    {
+      title: "Firm Development",
+      number: 6,
+      progress: 0
+    },
+    {
+      title: "Knowledge",
+      number: 7,
+      progress: 0
+    },
+    {
+      title: "Business Development",
+      number: 8,
+      progress: 0
+    }
+  ];
 
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -53,6 +100,31 @@ const SuperviseeCard = ({ supervisee }) => {
         const progressPercentage = ((defaultKPIdata.length - incompleteKPIs.length) / defaultKPIdata.length) * 100;
 
         setProgress(progressPercentage.toFixed(2)); // Set progress to 2 decimal places
+        
+        // Calculate progress for each KPI category
+        const updatedCards = cards.map(card => {
+          // Find all KPIs that start with the card's number
+          const categoryKPIs = defaultKPIdata.filter(kpi => 
+            kpi.startsWith(`${card.number}.`)
+          );
+          
+          const completedCategoryKPIs = categoryKPIs.filter(kpi => 
+            KPIs.data.completedKPIs.includes(kpi)
+          );
+          
+          const cardProgress = categoryKPIs.length > 0 
+            ? (completedCategoryKPIs.length / categoryKPIs.length) * 100 
+            : 0;
+            
+          return {
+            ...card,
+            progress: cardProgress.toFixed(0),
+            total: categoryKPIs.length,
+            completed: completedCategoryKPIs.length
+          };
+        });
+        
+        setKpiProgressCards(updatedCards);
       } catch (error) {
         console.error("Failed to fetch progress:", error);
         if (error.sessionExpired) {
@@ -65,15 +137,82 @@ const SuperviseeCard = ({ supervisee }) => {
     };
 
     fetchProgress();
-  });
+  }, [email, request, logout, navigate]); // Added dependencies to avoid lint warnings
+
+  // Function to get color based on progress
+  const getProgressColor = (progress) => {
+    if (progress < 50) return "text-red-600";
+    if (progress < 100) return "text-orange-400";
+    return "text-green-600";
+  };
+
+  const handleNudge = async ({ kpiName, kpiProgress }) => {
+    try {
+      await request({
+        route: "/users/nudge",
+        type: "POST",
+        body: {
+          kpiName: kpiName,
+          kpiProgress: kpiProgress, // number
+          from: decryptedEmail,
+          to: email,
+        }
+      });
+    } catch (error) {
+      console.error("Failed to nudge user:", error);
+      if (error.sessionExpired) {
+        navigate('/');
+        logout();
+      }
+    }
+  }
 
   return (
-    <div className="flex justify-between items-center p-3 mb-2 border dark:border-primary cursor-pointer rounded-2xl font-semibold w-full">
-      <p>{name} {surname}</p>
-      <p className={`${progress < 50 ? "text-red-900" : (progress < 100 ? "text-orange-400" : "text-green-600")}`}>{progress}%</p>
-    </div>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <div className="flex justify-between items-center p-3 mb-2 border dark:border-primary cursor-pointer rounded-2xl font-semibold w-full">
+          <p>{name} {surname}</p>
+          <p className={`${progress < 50 ? "text-red-600" : (progress < 100 ? "text-orange-400" : "text-green-600")}`}>{progress}%</p>
+        </div>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="max-w-4xl h-auto">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-center text-2xl font-semibold">
+            {name} {surname}
+          </AlertDialogTitle>
+        </AlertDialogHeader>
+        <div className="flex overflow-x-auto gap-4 py-4 pb-6 px-1">
+          {kpiProgressCards.map((card) => (
+            <Card key={card.number} className="border dark:border-primary min-w-64 flex-shrink-0">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span>{card.title}</span>
+                    <span className={getProgressColor(card.progress)}>
+                      {card.progress}%
+                    </span>
+                  </div>
+                  <Progress value={card.progress} className="h-2" />
+                  <Button 
+                    className="mt-3 px-4 py-2 hover:bg-primary/90 rounded-md w-1/2 text-sm font-medium cursor-pointer"
+                    variant="secondary"
+                    onClick={() => handleNudge({ kpiName: card.title, kpiProgress: card.progress })}
+                  >
+                    Nudge
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="cursor-pointer">Close</AlertDialogCancel>
+          <AlertDialogAction className="cursor-pointer" onClick={() => navigate(`/appraisal/${encodeURIComponent(supervisee.email)}`)}>Open Details</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
-}
+};
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null);
@@ -192,7 +331,8 @@ const getUserData = async (encryptedEmail, navigate, logout) => {
       email: user.email,
       avatarFallback: user.name.charAt(0) + user.surname.charAt(0),
       role: user.position,
-      supervisees: user.supervising,
+      supervisors: [...user.supervisor].sort((a, b) => a.localeCompare(b)),
+      supervisees: [...user.supervising].sort((a, b) => a.localeCompare(b))
     };
   } catch (error) {
     console.error(error);

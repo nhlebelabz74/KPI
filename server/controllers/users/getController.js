@@ -54,7 +54,7 @@ const getKPIInfo = asyncWrapper(async (req, res) => {
   }
 
   const position = user.position;
-  const responses = await Admin.find({ position: position })
+  const responses = await Admin.find({ position: position });
   const kpiNumbers = responses[0].kpiNumbers;
 
   if (!kpiNumbers) { // not possible but just in case

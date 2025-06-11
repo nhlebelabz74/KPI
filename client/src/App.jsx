@@ -85,6 +85,11 @@ const App = () => {
               <AppraisalPage />
             </ProtectedRoute>
           } />
+          <Route path='/appraisal/:email' element={
+            <ProtectedRoute>
+              <AppraisalPage />
+            </ProtectedRoute>
+          } />
         </Routes>
         <Toaster />
       </BrowserRouter>

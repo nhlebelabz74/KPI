@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/authContext';
 import request from '@/utils/request';
 import { toast } from 'sonner';
-import { KPI_Types as types } from '@/constants';
+import { appraisal_sections as sections } from '@/constants';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AES } from 'crypto-js';
 
-const SectionBase = ({ config }) => {
+// assuming supervisee email is encrypted
+const SectionBase = ({ config, email, isSupervisor, appraisalPeriod }) => {
   const { isAuthenticated } = useAuth();
-  const encryptedEmail = localStorage.getItem('encryptedEmail');
+  const encryptedEmail = email ? AES.encrypt(email, process.env.REACT_APP_ENCRYPTION_KEY).toString()
+  : localStorage.getItem('encryptedEmail');
   const [textAnswers, setTextAnswers] = useState({});
-  const [radioAnswers, setRadioAnswers] = useState({});
+  const [userRadioAnswers, setUserRadioAnswers] = useState({});
+  const [supervisorRadioAnswers, setSupervisorRadioAnswers] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -28,28 +43,35 @@ const SectionBase = ({ config }) => {
         setLoading(true);
         const response = await request({
           type: 'GET',
-          route: '/appraisal/get-response',
-          params: {
-            email: encodeURIComponent(encryptedEmail),
-            sectionId: config.section
+          route: '/users/appraisal/get-response/:email/:sectionId/:appraisalPeriod',
+          routeParams: {
+            email: encryptedEmail,
+            sectionId: config.section,
+            appraisalPeriod: appraisalPeriod
           }
         });
 
         const savedData = response.data?.answers || [];
         const newTextAnswers = {};
-        const newRadioAnswers = {};
+        const newUserRadioAnswers = {};
+        const newSupervisorRadioAnswers = {};
 
         savedData.forEach(answer => {
           if (config.withTextArea && config.withTextArea.some(ta => ta.id === answer.id)) {
             newTextAnswers[answer.id] = answer.answer;
           }
           if (config.withRadioGroup && config.withRadioGroup.some(rg => rg.id === answer.id)) {
-            newRadioAnswers[answer.id] = answer.answer;
+            if (answer.id.includes('-user')) {
+              newUserRadioAnswers[answer.id] = answer.answer;
+            } else if (answer.id.includes('-supervisor')) {
+              newSupervisorRadioAnswers[answer.id] = answer.answer;
+            }
           }
         });
 
         setTextAnswers(newTextAnswers);
-        setRadioAnswers(newRadioAnswers);
+        setUserRadioAnswers(newUserRadioAnswers);
+        setSupervisorRadioAnswers(newSupervisorRadioAnswers);
       } catch (err) {
         console.error('Error loading saved answers:', err);
         setError('Failed to load saved data');
@@ -60,14 +82,18 @@ const SectionBase = ({ config }) => {
     };
 
     fetchSavedAnswers();
-  }, [isAuthenticated, config.section]);
+  }, [isAuthenticated, config.section, appraisalPeriod]);
 
   const handleTextChange = (id, value) => {
     setTextAnswers(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleRadioChange = (id, value) => {
-    setRadioAnswers(prev => ({ ...prev, [id]: value }));
+  const handleUserRadioChange = (id, value) => {
+    setUserRadioAnswers(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSupervisorRadioChange = (id, value) => {
+    setSupervisorRadioAnswers(prev => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = async () => {
@@ -81,20 +107,28 @@ const SectionBase = ({ config }) => {
           title: ta.title || '',
           answer: textAnswers[ta.id] || ''
         })),
-        ...(config.withRadioGroup || []).map(rg => ({
-          id: rg.id,
-          title: rg.title || '',
-          answer: radioAnswers[rg.id] || ''
-        }))
+        ...(config.withRadioGroup || []).flatMap(rg => [
+          {
+            id: `${rg.id}-user`,
+            title: `${rg.title} (User)`,
+            answer: userRadioAnswers[`${rg.id}-user`] || ''
+          },
+          {
+            id: `${rg.id}-supervisor`,
+            title: `${rg.title} (Supervisor)`,
+            answer: supervisorRadioAnswers[`${rg.id}-supervisor`] || ''
+          }
+        ])
       ];
 
       await request({
         type: 'POST',
-        route: '/appraisal/save-response',
+        route: '/users/appraisal/save',
         body: {
           email: encodeURIComponent(encryptedEmail),
           sectionId: config.section,
-          answers: answers
+          answers: answers,
+          appraisalPeriod: appraisalPeriod
         }
       });
 
@@ -132,37 +166,67 @@ const SectionBase = ({ config }) => {
               onChange={(e) => handleTextChange(ta.id, e.target.value)}
               placeholder={ta.text_placeholder || ''}
               className="mt-2 min-h-[100px]"
+              disabled={isSupervisor} // Only disable if the supervisor is viewing
             />
           </div>
         ))}
 
         {/* Radio Groups */}
         {config.withRadioGroup && config.withRadioGroup.map((rg) => (
-          <div key={rg.id} className="mb-6">
-            <Label>{rg.title || ''}</Label>
-            <RadioGroup
-              value={radioAnswers[rg.id] || ''}
-              onValueChange={(value) => handleRadioChange(rg.id, value)}
-              className="mt-2"
-            >
-              {rg.options && rg.options.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <RadioGroupItem 
-                    value={option.value} 
-                    id={`${rg.id}-${option.value}`} 
-                  />
-                  <Label htmlFor={`${rg.id}-${option.value}`}>
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+          <div key={rg.id} className="mb-6 space-y-4">
+            {/* User Rating */}
+            <div>
+              <Label className="block mb-2">{rg.title} (Self Assessment)</Label>
+              <RadioGroup
+                value={userRadioAnswers[`${rg.id}-user`] || ''}
+                onValueChange={(value) => handleUserRadioChange(`${rg.id}-user`, value)}
+                className="flex space-x-4"
+                disabled={isSupervisor} // Disable if supervisor is viewing
+              >
+                {rg.options && rg.options.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-1">
+                    <RadioGroupItem 
+                      value={option.value} 
+                      id={`${rg.id}-user-${option.value}`} 
+                      className="cursor-pointer"
+                    />
+                    <Label htmlFor={`${rg.id}-user-${option.value}`} className="text-sm">
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            
+            {/* Supervisor Rating */}
+            <div>
+              <Label className="block mb-2">{rg.title} (Supervisor Assessment)</Label>
+              <RadioGroup
+                value={supervisorRadioAnswers[`${rg.id}-supervisor`] || ''}
+                onValueChange={(value) => handleSupervisorRadioChange(`${rg.id}-supervisor`, value)}
+                className="flex space-x-4"
+                disabled={!isSupervisor} // Only enable if supervisor is viewing
+              >
+                {rg.options && rg.options.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-1">
+                    <RadioGroupItem 
+                      value={option.value} 
+                      id={`${rg.id}-supervisor-${option.value}`} 
+                      className="cursor-pointer"
+                    />
+                    <Label htmlFor={`${rg.id}-supervisor-${option.value}`} className="text-sm">
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
           </div>
         ))}
       </CardContent>
 
       <CardFooter className="border-t px-6 py-4">
-        <Button onClick={handleSubmit} disabled={loading}>
+        <Button onClick={handleSubmit} disabled={loading} className="cursor-pointer">
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -178,255 +242,101 @@ const SectionBase = ({ config }) => {
 };
 
 const AppraisalForm = ({ supervisor }) => {
-  // Example configuration - should be passed as props or imported
-  const sections = [
-    {
-      section: "Introduction",
-      introParagraph: `Please provide:
-  (a) Total billable and non-billable hours recorded
-  (b) Total fees recorded
-  (c) Actual fees invoiced up to last month
-  (d) Percentage of fees written off
-  (e) Hours recorded vs hours billed
-  (f) Compliance with annual budget`,
-      withTextArea: [
-        {
-          id: "introduction-details",
-          text_placeholder: "Provide detailed information covering all requested metrics and comments..."
+  const navigate = useNavigate();
+  const isSupervisor = !!supervisor; // Check if supervisor is viewing
+
+  const [isEvaluated, setIsEvaluated] = useState(false);
+  const [appraisalPeriod, setAppraisalPeriod] = useState('Mar 1, 2025 - Aug 31, 2025');
+  const periods = ['Mar 1, 2025 - Aug 31, 2025', 'Sep 1, 2025 - Feb 28, 2026'];
+
+  const handleEvaluateProposal = async () => {
+    if(!isEvaluated)
+      return;
+
+    try {
+      await request({
+        type: 'POST',
+        route: '/users/appraisal/evaluate',
+        body: {
+          email: encodeURIComponent(supervisor.superviseeEmail),
+          appraisalPeriod: appraisalPeriod
         }
-      ]
-    },
-    {
-      section: "Technical Skills",
-      introParagraph: `Discuss:
-  - Examples of involvement in various matters
-  - Complexity of handled cases
-  - Number of front-end/litigation matters assisted
-  - Level of involvement and contribution to outcomes
-  - Initiative and exercise of discretion/judgment
-  - Compliance with technical skill targets`,
-      withTextArea: [
-        {
-          id: "technical-skills-examples",
-          text_placeholder: "Describe your technical skills and provide specific examples..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "technical-skills-rating",
-          title: "Technical Skills Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Goodwill",
-      introParagraph: `Discuss and provide specific examples of:
-  - New client introductions
-  - Expanding existing client relationships
-  - Referrals from other professionals
-  - Compliance with goodwill targets`,
-      withTextArea: [
-        {
-          id: "goodwill-examples",
-          text_placeholder: "Describe your goodwill contributions..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "goodwill-rating",
-          title: "Goodwill Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Responsive Leadership",
-      introParagraph: `1. Provide examples of:
-  - Taking ownership in billable matters
-  - Contributing to firm development
-  - Demonstrating firm values
-  - Showing initiative beyond obstacles
-  
-  2. Discuss mentoring activities:
-  - Candidate attorney development
-  - Peer practitioner support`,
-      withTextArea: [
-        {
-          id: "leadership-examples",
-          text_placeholder: "Describe your leadership initiatives..."
-        },
-        {
-          id: "mentoring-examples",
-          text_placeholder: "Detail your mentoring activities..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "leadership-rating",
-          title: "Leadership Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Building and Maintaining the Firm",
-      introParagraph: `1. Practice group initiatives:
-  - Suggestions and participation
-  - Departmental projects
-  
-  2. External promotion:
-  - Articles authored
-  - Presentations given
-  - External engagements`,
-      withTextArea: [
-        {
-          id: "initiatives-examples",
-          text_placeholder: "Describe your internal initiatives..."
-        },
-        {
-          id: "promotion-examples",
-          text_placeholder: "List external promotion activities..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "firm-building-rating",
-          title: "Firm Building Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Knowledge Management",
-      introParagraph: `Discuss:
-  - Knowledge database maintenance
-  - Expertise development
-  - Compliance with knowledge targets
-  - Specific examples of knowledge sharing`,
-      withTextArea: [
-        {
-          id: "knowledge-management",
-          text_placeholder: "Describe your knowledge management activities..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "knowledge-rating",
-          title: "Knowledge Management Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Business Development",
-      introParagraph: `Discuss:
-  - Business development approaches
-  - Sector-specific initiatives
-  - Compliance with development plan
-  - Attach latest business development plan draft (include dates)`,
-      withTextArea: [
-        {
-          id: "business-development",
-          text_placeholder: "Describe business development efforts..."
-        }
-      ],
-      withRadioGroup: [
-        {
-          id: "business-rating",
-          title: "Business Development Rating",
-          options: [
-            { value: "1", label: "1 - Far below KPIs" },
-            { value: "2", label: "2 - Below KPIs" },
-            { value: "3", label: "3 - Meets KPIs" },
-            { value: "4", label: "4 - Exceeds KPIs" },
-            { value: "5", label: "5 - Far Exceeds KPIs" }
-          ]
-        }
-      ]
-    },
-    {
-      section: "Self-Assessment",
-      introParagraph: "Honest self-evaluation for professional development:",
-      withTextArea: [
-        {
-          id: "strengths",
-          title: "1. Key Strengths",
-          text_placeholder: "Identify strengths with examples..."
-        },
-        {
-          id: "development-needs",
-          title: "2. Development Needs",
-          text_placeholder: "Identify key areas for improvement..."
-        }
-      ]
-    },
-    {
-      section: "Career Plans/Aspirations",
-      introParagraph: "Outline your career objectives:",
-      withTextArea: [
-        {
-          id: "short-term",
-          title: "Short Term (3-6 months)",
-          text_placeholder: "Include promotion motivations if applicable..."
-        },
-        {
-          id: "medium-term",
-          title: "Medium Term (6-24 months)",
-          text_placeholder: "Describe mid-term goals..."
-        },
-        {
-          id: "long-term",
-          title: "Long Term (24+ months)",
-          text_placeholder: "Outline long-term aspirations..."
-        }
-      ]
+      });
     }
-  ];
+    catch (error) {
+      console.error('Error evaluating proposal:', error);
+      toast.error('Failed to evaluate proposal', {
+        icon: <XCircle className="h-4 w-4 text-red-500" />
+      });
+    }
+  }
 
   return (
     <div className="min-w-5xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Performance Appraisal</h1>
-        <p className="text-muted-foreground">
-          Supervisor: {supervisor || 'Not Assigned'}
-        </p>
+      <div className="flex justify-between items-center mb-8">
+        <Button 
+          variant="outline"
+          size="sm" 
+          onClick={() => { handleEvaluateProposal(); navigate(-1) }} 
+          className="mb-4 cursor-pointer"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        
+        <div>
+          <h1 className="text-2xl font-bold mb-2">Performance Appraisal</h1>
+          <p className="text-muted-foreground">
+            {isSupervisor ? 
+              `Viewing as supervisor for: ${supervisor.superviseeEmail}` : 
+              'Self-Assessment Mode'}
+          </p>
+        </div>
+
+        {/* Add switch */}
+        <div className='flex flex-col gap-2'>
+          <Label className="mb-2">{ isEvaluated ? 'Evaluated' : 'Not Evaluated'}</Label>
+          <Switch 
+            checked={isEvaluated} 
+            onCheckedChange={(checked) => setIsEvaluated(checked)} 
+            disabled={!isSupervisor}
+          />
+        </div>
       </div>
+      
+      <Card className='mb-6 shadow-sm'>
+        <CardHeader>
+          <CardTitle>Appraisal Period</CardTitle>
+          <CardDescription>
+            {isSupervisor ? 'Select the appraisal period for the supervisee.' : 'Select your appraisal period.'}
+          </CardDescription>
+          <Select
+            value={appraisalPeriod} 
+            onValueChange={setAppraisalPeriod} 
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Appraisal Period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {periods.map((period) => (
+                  <SelectItem key={period} value={period}>
+                    {period}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </CardHeader>
+      </Card>
 
       {sections.map((sectionConfig) => (
         <SectionBase 
           key={sectionConfig.section} 
           config={sectionConfig} 
+          email={isSupervisor ? supervisor.superviseeEmail : null}
+          isSupervisor={isSupervisor}
+          appraisalPeriod={appraisalPeriod}
         />
       ))}
     </div>

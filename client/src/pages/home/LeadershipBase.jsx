@@ -289,6 +289,28 @@ const LeadershipBase = ({ role, criteria }) => {
     }
   };
 
+  const handleRequestSuperDocument = async () => {
+    try {
+      await request({
+        type: 'POST',
+        route: '/users/request/super/document',
+        body: {
+          email: encodeURIComponent(encryptedEmail),
+          type: types.LEADERSHIP,
+        }
+      });
+    } catch (error) {
+      console.error('Error requesting document:', error);
+
+      if(error.sessionExpired) {
+        
+      }
+
+      setError(`Failed to request document: ${error.message}`);
+      setShowErrorDialog(true);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Card>
@@ -323,14 +345,25 @@ const LeadershipBase = ({ role, criteria }) => {
 
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Button 
-                onClick={() => document.getElementById('leadership-file').click()}
-                disabled={loading}
-                className="cursor-pointer"
-              >
-                <UploadCloud className="mr-2 h-4 w-4" /> 
-                Upload Supporting PDF(s)
-              </Button>
+              <div className='flex items-center gap-2'>
+                <Button 
+                  onClick={() => document.getElementById('leadership-file').click()}
+                  disabled={loading}
+                  className="cursor-pointer"
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" /> 
+                  Upload Supporting PDF(s)
+                </Button>
+
+                <Button 
+                  onClick={handleRequestSuperDocument}
+                  disabled={loading}
+                  className="cursor-pointer"
+                >
+                  <UploadCloud className="mr-2 h-4 w-4" /> 
+                  Request document(s)
+                </Button>
+              </div>
               <input
                 id="leadership-file"
                 type="file"

@@ -11,6 +11,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { AlertDialog, AlertDialogHeader, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle, AlertDialogContent } from '@/components/ui/alert-dialog';
 import QualitativeKPISectionBase from '../../QualitativeKPISectionBase';
 
+import getData from '@/utils/get-excel';
 import request from '@/utils/request';
 import { useAuth } from '@/context/authContext';
 import { KPI_Types as types } from '@/constants';
@@ -33,9 +34,12 @@ const getBudgetNumbers = async () => {
   const user = response.data.user;
   const annualBudget = user.budget; // get the budget from the user object
 
+  const data = (await getData({ surname: user.surname, name: user.name }));
+
   return {
     TOTAL_ANNUAL_BUDGET: annualBudget,
-    BUDGET_ACHIEVED: [730293, 193842, 0, 0, 0, 0, 0, 0, 0, 0, 0] // will get later
+    BUDGET_ACHIEVED: data.billed,
+    COLLECTED: data.collected
   }
 };
 
@@ -43,7 +47,8 @@ const useBudgetData = () => {
   const { isAuthenticated } = useAuth();
   const [budgetData, setBudgetData] = useState({
     TOTAL_ANNUAL_BUDGET: 0,
-    BUDGET_ACHIEVED: []
+    BUDGET_ACHIEVED: [],
+    COLLECTED: []
   });
 
   useEffect(() => {
@@ -51,7 +56,8 @@ const useBudgetData = () => {
       if (!isAuthenticated) {
         setBudgetData({
           TOTAL_ANNUAL_BUDGET: 0,
-          BUDGET_ACHIEVED: []
+          BUDGET_ACHIEVED: [],
+          COLLECTED: []
         });
         return;
       }
@@ -60,13 +66,15 @@ const useBudgetData = () => {
         const data = await getBudgetNumbers();
         setBudgetData({
           TOTAL_ANNUAL_BUDGET: data.TOTAL_ANNUAL_BUDGET,
-          BUDGET_ACHIEVED: data.BUDGET_ACHIEVED
+          BUDGET_ACHIEVED: data.BUDGET_ACHIEVED,
+          COLLECTED: data.COLLECTED
         });
       } catch (error) {
         console.error("Error fetching budget data:", error);
         setBudgetData({
           TOTAL_ANNUAL_BUDGET: 0,
-          BUDGET_ACHIEVED: []
+          BUDGET_ACHIEVED: [],
+          COLLECTED: []
         });
       }
     };
@@ -78,30 +86,48 @@ const useBudgetData = () => {
 };
 
 const MonthlyBudgetSection = () => {
-  const { TOTAL_ANNUAL_BUDGET, BUDGET_ACHIEVED } = useBudgetData();
+  const { TOTAL_ANNUAL_BUDGET, BUDGET_ACHIEVED, COLLECTED } = useBudgetData();
   
-  const chartData = MONTHS.map((month, index) => ({
+  let chartData = MONTHS.map((month, index) => ({
     month,
     target: (TOTAL_ANNUAL_BUDGET * MONTHLY_PERCENTAGES[index]) / 100,
-    billed: BUDGET_ACHIEVED[index]
+    billed: BUDGET_ACHIEVED[index],
+    collected: COLLECTED[index]
   }));
 
+  // Find the last index where either billed or collected is not zero
+  let lastNonZeroIndex = -1;
+  chartData.forEach((item, index) => {
+    if (item.billed !== 0 || item.collected !== 0) {
+      lastNonZeroIndex = index;
+    }
+  });
+
+  // Include all items up to and including the next month after the last non-zero month
+  chartData = chartData.filter((item, index) => 
+    index <= lastNonZeroIndex + 1
+  );
+
   const chartConfig = {
+    target: {
+      label: 'Budget',
+      color: 'var(--chart-2)'
+    },
     billed: {
       label: 'Billed',
       color: 'var(--chart-1)'
     },
-    target: {
-      label: 'Target',
-      color: 'var(--chart-2)'
-    },
+    collected: {
+      label: 'Collected',
+      color: 'var(--chart-3)'
+    }
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Monthly Budget Achievement</CardTitle>
-        <CardDescription>March 2025 - January 2026</CardDescription>
+        <CardDescription>March {(new Date()).getFullYear()} - February {(new Date()).getFullYear() + 1}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
@@ -118,8 +144,9 @@ const MonthlyBudgetSection = () => {
               cursor={false}
               content={<ChartTooltipContent indicator="dashed" />}
             />
-            <Bar dataKey="billed" fill="var(--color-billed)" radius={4} />
             <Bar dataKey="target" fill="var(--color-target)" radius={4} />
+            <Bar dataKey="billed" fill="var(--color-billed)" radius={4} />
+            <Bar dataKey="collected" fill="var(--color-collected)" radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>

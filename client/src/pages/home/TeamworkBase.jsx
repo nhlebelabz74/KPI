@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UploadCloud, Save, CheckCircle, Loader2, XCircle, Download } from 'lucide-react';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/authContext';
 import request from '@/utils/request';
 import { KPI_Types as types } from '@/constants';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const TeamworkBase = ({ role }) => {
   const [selfAssessment, setSelfAssessment] = useState('');
@@ -24,6 +27,7 @@ const TeamworkBase = ({ role }) => {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [showLoadingDialog, setShowLoadingDialog] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+  const [peerEmail, setPeerEmail] = useState('');
 
   const { isAuthenticated } = useAuth();
   const encryptedEmail = localStorage.getItem('encryptedEmail');
@@ -278,6 +282,49 @@ const TeamworkBase = ({ role }) => {
     }
   };
 
+  const handlePeerEmailOnChange = (event) => {
+    setPeerEmail(event.target.value);
+  }
+
+  const handleRequestSuperDocument = async () => {
+      try {
+        await request({
+          type: 'POST',
+          route: '/users/request/super/document',
+          body: {
+            email: encodeURIComponent(encryptedEmail),
+            type: types.TEAMWORK,
+          }
+        });
+      } catch (error) {
+        console.error('Error requesting document:', error);
+  
+        if(error.sessionExpired) {
+          
+        }
+  
+        setError(`Failed to request document: ${error.message}`);
+        setShowErrorDialog(true);
+      }
+  }
+
+  const sendPeerDocumentRequest = async () => {
+    try {
+      await request({
+          type: 'POST',
+          route: '/users/request/peer/document',
+          body: {
+            to: encodeURIComponent(peerEmail),
+            from: encodeURIComponent(encryptedEmail),
+            type: types.TEAMWORK,
+          }
+        });
+    } catch (error) {
+      console.error('Error sending peer document request:', error);
+      setError('Failed to send peer document request');
+    }
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -349,13 +396,23 @@ const TeamworkBase = ({ role }) => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
-                <Button 
-                  onClick={() => document.getElementById(`${role.toLowerCase().split(" ").join("-")}-file-director`).click()}
-                  className="cursor-pointer"
-                  disabled={loading}
-                >
-                  <UploadCloud className="mr-2 h-4 w-4" /> Upload Director Document
-                </Button>
+                <div className='flex flex-col gap-2'>
+                  <Button 
+                    onClick={() => document.getElementById(`${role.toLowerCase().split(" ").join("-")}-file-director`).click()}
+                    className="cursor-pointer"
+                    disabled={loading}
+                  >
+                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Director Document
+                  </Button>
+
+                  <Button 
+                    onClick={handleRequestSuperDocument}
+                    className="cursor-pointer"
+                    disabled={loading}
+                  >
+                    <UploadCloud className="mr-2 h-4 w-4" /> Request Director Document
+                  </Button>
+                </div>
                 <input
                   id={`${role.toLowerCase().split(" ").join("-")}-file-director`}
                   type="file"
@@ -394,13 +451,51 @@ const TeamworkBase = ({ role }) => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
-                <Button 
-                  onClick={() => document.getElementById(`${role.toLowerCase().split(" ").join("-")}-file-peer`).click()}
-                  className="cursor-pointer"
-                  disabled={loading}
-                >
-                  <UploadCloud className="mr-2 h-4 w-4" /> Upload Peer Document
-                </Button>
+                <div className='flex flex-col gap-2'>
+                  <Button 
+                    onClick={() => document.getElementById(`${role.toLowerCase().split(" ").join("-")}-file-peer`).click()}
+                    className="cursor-pointer"
+                    disabled={loading}
+                  >
+                    <UploadCloud className="mr-2 h-4 w-4" /> Upload Peer Document
+                  </Button>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="cursor-pointer"
+                        disabled={loading}
+                      >
+                        <UploadCloud className="mr-2 h-4 w-4" /> Request Peer Document
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Request Peer Document</DialogTitle>
+                        <DialogDescription>
+                          Enter the email address of the peer you want to request the document from:
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="flex flex-row gap-4 items-center">
+                          <Label htmlFor="email" className="">
+                            Email
+                          </Label>
+                          <Input 
+                            id="email"
+                            value={peerEmail}
+                            onChange={handlePeerEmailOnChange}
+                            placeholder="m@example.com" 
+                            className="w-full" 
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" className="cursor-pointer" onClick={sendPeerDocumentRequest}>Send Request</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <input
                   id={`${role.toLowerCase().split(" ").join("-")}-file-peer`}
                   type="file"
