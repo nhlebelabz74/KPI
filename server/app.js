@@ -34,7 +34,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.get('/api/download', (req, res) => {
-  const exePath = path.join(__dirname, 'release', 'KPI-Tracker-1.1.0-Setup.exe');
+  const exePath = path.join(__dirname, 'release', 'KPI-Tracker-3.0.1-Setup.exe');
   
   // Check if file exists first
   if (!fs.existsSync(exePath)) {
@@ -44,7 +44,7 @@ app.get('/api/download', (req, res) => {
   // Set appropriate headers
   res.set({
     'Content-Type': 'application/octet-stream',
-    'Content-Disposition': 'attachment; filename=KPI-Tracker-1.1.0-Setup.exe',
+    'Content-Disposition': 'attachment; filename=KPI-Tracker-3.0.1-Setup.exe',
     'Cache-Control': 'public, max-age=86400',
     'X-Content-Type-Options': 'nosniff',
     'Expires': new Date(Date.now() + 86400000).toUTCString()

@@ -292,6 +292,13 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
     }));
   };
 
+  const handleAdditionalTextChange = (textAreaId, value) => {
+    setTextInputs(prev => ({
+      ...prev,
+      [textAreaId]: value
+    }));
+  }
+
   const handleProgressChange = (progressId, value) => {
     setProgressValues(prev => ({
       ...prev,
@@ -657,7 +664,7 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
             {kpi.withTextAreas.map(textArea => (
               <TextAreaField key={textArea.id} {...textArea}
                 value={textInputs[textArea.id] || ''}
-                onChange={(e) => handleTextChange(textArea.id, e.target.value)}
+                onChange={(e) => handleAdditionalTextChange(textArea.id, e.target.value)}
                 placeholder={textArea.placeholder}
                 minHeight={textArea.minHeight || '16'}
                 title={textArea.title}
