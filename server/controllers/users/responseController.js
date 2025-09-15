@@ -77,7 +77,8 @@ const getResponse = asyncWrapper(async (req, res) => {
   }
 
   // find the response by kpiNumber and email
-  const response = await Response.findOne({ kpiNumber: kpiNumber, email: decryptedEmail });
+  const response = await Response.findOne({ kpiNumber: decodeURIComponent(kpiNumber), email: decryptedEmail });
+  console.log("response: ", response);
   if (!response) {
     return res.status(404).json({ message: 'Response not found' });
   }

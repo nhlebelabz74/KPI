@@ -25,7 +25,7 @@ import { AES } from 'crypto-js';
 // assuming supervisee email is encrypted
 const SectionBase = ({ config, email, isSupervisor, appraisalPeriod }) => {
   const { isAuthenticated } = useAuth();
-  const encryptedEmail = email ? AES.encrypt(email, process.env.REACT_APP_ENCRYPTION_KEY).toString()
+  const encryptedEmail = email ? AES.encrypt(email, import.meta.env.VITE_APP_ENCRYPTION_KEY).toString()
   : localStorage.getItem('encryptedEmail');
   const [textAnswers, setTextAnswers] = useState({});
   const [userRadioAnswers, setUserRadioAnswers] = useState({});
@@ -57,13 +57,15 @@ const SectionBase = ({ config, email, isSupervisor, appraisalPeriod }) => {
         const newSupervisorRadioAnswers = {};
 
         savedData.forEach(answer => {
-          if (config.withTextArea && config.withTextArea.some(ta => ta.id === answer.id)) {
+          if (config?.withTextArea && config.withTextArea.some(ta => ta.id === answer.id)) {
             newTextAnswers[answer.id] = answer.answer;
           }
-          if (config.withRadioGroup && config.withRadioGroup.some(rg => rg.id === answer.id)) {
-            if (answer.id.includes('-user')) {
+
+          if(config?.withRadioGroup && config.withRadioGroup.some(rg => answer.id.includes(rg.id))){
+            if(answer.id.includes('rating-user')){
               newUserRadioAnswers[answer.id] = answer.answer;
-            } else if (answer.id.includes('-supervisor')) {
+            }
+            else if(answer.id.includes('rating-supervisor')){
               newSupervisorRadioAnswers[answer.id] = answer.answer;
             }
           }

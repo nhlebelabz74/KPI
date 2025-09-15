@@ -34,7 +34,13 @@ const getBudgetNumbers = async () => {
   const user = response.data.user;
   const annualBudget = user.budget; // get the budget from the user object
 
-  const data = (await getData({ surname: user.surname, name: user.name })) || { billed: [], collected: [] };
+  let data;
+  try {
+    data = await getData({ surname: user.surname, name: user.name });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    data = { billed: [], collected: [] };
+  }
 
   return {
     TOTAL_ANNUAL_BUDGET: annualBudget,

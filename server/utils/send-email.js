@@ -1,88 +1,61 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 require('dotenv').config();
 
-const sendEmail = async ({ receiver_email, subject, html, attachments }) => {
-    const email_address = process.env.EMAIL_ADDRESS;
-    const BATCH_SIZE = 50; // Most providers recommend 50-100 emails per batch
+const sendEmail = async ({ receiver_email, subject, html }) => {
+    try {
+      const api = axios.create({
+        baseURL: "https://prod-157.westeurope.logic.azure.com:443/workflows/b485fead598a41a2ba6f9f972db6487c/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=FaVCuWdFeY9bIhnWRCdnQAgpKxCgVf-hvS9twiyt6v4",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        maxContentLength: 100 * 1024 * 1024, // 100 MB limit
+        maxBodyLength: 100 * 1024 * 1024 // 100 MB limit
+      });
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-          user: email_address,
-          pass: process.env.EMAIL_PASSWORD
-      }
-    });
-
-    // Single recipient case
-    if (!Array.isArray(receiver_email)) {
-      const mailOptions = {
-        from: `"Banzile Nhlebela" <${email_address}>`,
-        to: receiver_email,
+      const body = {
+        to: Array.isArray(receiver_email) ? receiver_email : [receiver_email],
         subject: subject,
         html: html,
-        attachments: attachments
       };
 
-      try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
-        return { success: true };
-      } catch (error) {
-        console.error('Email failed:', error.toString());
-        return { success: false, error: error.toString() };
-      }
-    }
+      const response = await api.post("", body);
 
-    // Multiple recipients case - batch processing
-    try {
-      let successCount = 0;
-      let failCount = 0;
-      let errors = [];
-
-      // Split emails into batches
-      for (let i = 0; i < receiver_email.length; i += BATCH_SIZE) {
-        const batch = receiver_email.slice(i, i + BATCH_SIZE);
-        
-        const mailOptions = {
-          from: `"Wits Consulting Club" <${email_address}>`,
-          to: email_address,
-          subject: subject,
-          html: html,
-          attachments: attachments,
-          bcc: batch.join(', ')
-        };
-
-        try {
-          console.log(`Sending batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(receiver_email.length/BATCH_SIZE)} with ${batch.length} recipients`);
-          const info = await transporter.sendMail(mailOptions);
-          console.log(`Batch ${Math.floor(i/BATCH_SIZE) + 1} sent:`, info.response);
-          successCount += batch.length;
-          
-          // Add a small delay between batches to avoid rate limiting
-          if (i + BATCH_SIZE < receiver_email.length) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        } catch (error) {
-          console.error(`Batch ${Math.floor(i/BATCH_SIZE) + 1} failed:`, error.toString());
-          failCount += batch.length;
-          errors.push(error.toString());
-        }
-      }
-
-      if (failCount === 0) {
-        return { success: true, sent: successCount };
-      } else {
-        return { 
-          partialSuccess: true, 
-          sent: successCount, 
-          failed: failCount,
-          errors: errors
-        };
-      }
+      return { 
+        success: true, 
+        data: response.data,
+        status: response.status,
+        statusText: response.statusText
+      };
     } catch (error) {
-      console.error('Email batching failed:', error.toString());
-      return { success: false, error: error.toString() };
+      // console.error("Error sending email:", error);
+
+      // Axios-specific error handling
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            const err = { 
+                success: false, 
+                error: error.message,
+                status: error.response.status,
+                data: error.response.data
+            };
+            
+            console.error(err);
+            return err;
+        } else if (error.request) {
+            // The request was made but no response was received
+            return { 
+                success: false, 
+                error: 'No response received from Power Automate flow',
+                request: error.request
+            };
+        } else {
+            // Something happened in setting up the request
+            return { 
+                success: false, 
+                error: error.message,
+                stack: error.stack
+            };
+        }
     }
 };
 

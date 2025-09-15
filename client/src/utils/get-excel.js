@@ -33,7 +33,7 @@ const getExcel = async (targetSheetName = null) => {
   let searchDate = getPreviousMonth(today.getMonth(), today.getFullYear());
   
   const api = axios.create({
-    baseURL: "https://prod-158.westeurope.logic.azure.com:443/workflows/3760c6d02c5142f1ae66f15ae677d899/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=bhKdPvZljg9gySUvT7jhBaZuOVzxV9O8u6SC8kRFpUg",
+    baseURL: "https://default89055e55191e4127b426bad22809e6.4a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/3760c6d02c5142f1ae66f15ae677d899/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=1hdzIn4hpuITBEyYGPtHhgLwbrtqKwKZCt1SJCbJFgc",
     headers: {
       "Content-Type": "application/json"
     }
@@ -220,7 +220,7 @@ const getData = async ({ surname, name }) => {
     return employeeData;
   } catch (error) {
     console.error('Error getting employee data:', error);
-    throw error;
+    // throw error;
   }
 }
 

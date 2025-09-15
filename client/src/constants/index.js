@@ -8,6 +8,14 @@ export const KPI_Types = {
   BUSINESS_DEVELOPMENT: "BUSINESS DEVELOPMENT"
 }
 
+export const EMPLOYEE_ROLES = {
+  CA: "Candidate Attorney",
+  ASSOCIATE: "Associate",
+  SENIOR_ASSOCIATE: "Senior Associate",
+  EDP: "Equity Director",
+  SDP: "Salaried Partner"
+}
+
 export const appraisal_sections = [
     {
       section: "Profitability",
@@ -242,3 +250,4 @@ export const appraisal_sections = [
       ]
     }
   ];
+

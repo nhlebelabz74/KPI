@@ -190,23 +190,29 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
         setLoading(true);
         const savedData = await Promise.all(
           KPI_CONFIG.map(async kpi => {
-            const response = await request({
-              type: 'GET',
-              route: '/users/get/response/:email/:kpiNumber',
-              routeParams: {
-                email: encodeURIComponent(encryptedEmail),
-                kpiNumber: kpi.number
-              }
-            });
-            return { kpi, data: response.data?.response || {} };
+            try {
+              const response = await request({
+                type: 'GET',
+                route: '/users/get/response/:email/:kpiNumber',
+                routeParams: {
+                  email: encodeURIComponent(encryptedEmail),
+                  kpiNumber: encodeURIComponent(kpi.number)
+                }
+              });
+
+              return { kpi, responseData: response.data?.response };
+            } catch (error) {
+              console.error('Error fetching KPI response:', error);
+              return { kpi, responseData: {} };
+            }
           })
         );
 
-        const newState = savedData.reduce((acc, { kpi, data }) => {
-          const answer = typeof data.answer === 'object' ? data.answer : {};
+        const newState = savedData.reduce((acc, { kpi, responseData }) => {
+          const answer = typeof responseData.answer === 'object' ? responseData.answer : {};
           
           // Text inputs
-          acc.textInputs[kpi.number] = answer.text_answer || data.text_answer || '';
+          acc.textInputs[kpi.number] = answer.text_answer || responseData.text_answer || '';
           
           // Progress values
           kpi.withProgress?.forEach(progress => {
@@ -229,10 +235,10 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
           });
 
           // Document handling
-          acc.docStatus[kpi.number] = !!data.documents;
-          if (data.documents_metadata) {
+          acc.docStatus[kpi.number] = !!responseData.documents;
+          if (responseData.documents_metadata) {
             try {
-              acc.docMetadata[kpi.number] = data.documents_metadata;
+              acc.docMetadata[kpi.number] = responseData.documents_metadata;
             } catch (e) {
               acc.docMetadata[kpi.number] = {};
             }
@@ -532,6 +538,8 @@ const QualitativeKPISectionBase = ({ KPI_CONFIG, type }) => {
         requestBody.documents = documentData;
         requestBody.documents_metadata = documentMetadata;
       }
+
+      console.log('Saving KPI data with body:', requestBody);
       
       await request({
         type: 'POST',
