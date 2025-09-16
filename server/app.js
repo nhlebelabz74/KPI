@@ -33,39 +33,42 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-app.get('/api/download', (req, res) => {
-  const exePath = path.join(__dirname, 'release', 'KPI-Tracker-3.0.1-Setup.exe');
+app.get('/api/download', async (req, res) => {
+  const fileId = '1f0YQ__iQ1Y4VEiYLoDcKTxXa0fejV5ST';
+  const googleDriveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
   
-  // Check if file exists first
-  if (!fs.existsSync(exePath)) {
-    return res.status(404).send('Installer file not found');
+  try {
+    console.log('Fetching file from Google Drive...');
+    
+    const response = await axios({
+      method: 'GET',
+      url: googleDriveUrl,
+      responseType: 'stream'
+    });
+    
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename=KPI-Tracker-3.0.1-Setup.exe',
+      'Cache-Control': 'public, max-age=86400'
+    });
+    
+    // Stream the response from Google Drive to the client
+    response.data.pipe(res);
+    
+    console.log('File download started successfully');
+    
+    // Handle stream errors
+    response.data.on('error', (err) => {
+      console.error('Stream error:', err);
+      if (!res.headersSent) {
+        res.status(500).send('Error downloading file');
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error downloading from Google Drive:', error);
+    res.status(500).json({ error: 'Error downloading file' });
   }
-  
-  // Set appropriate headers
-  res.set({
-    'Content-Type': 'application/octet-stream',
-    'Content-Disposition': 'attachment; filename=KPI-Tracker-3.0.1-Setup.exe',
-    'Cache-Control': 'public, max-age=86400',
-    'X-Content-Type-Options': 'nosniff',
-    'Expires': new Date(Date.now() + 86400000).toUTCString()
-  });
-  
-  // Stream the file instead of loading it all into memory
-  const fileStream = fs.createReadStream(exePath);
-  fileStream.pipe(res);
-  
-  fileStream.on('error', (err) => {
-    console.error('Error streaming file:', err);
-    if (!res.headersSent) {
-      res.status(500).send('Error downloading file');
-    }
-  });
-
-  // successful download
-  fileStream.on('finish', () => {
-    console.log('File download completed successfully');
-    res.status(200).send("Download completed successfully");
-  });
 });
 
 app.use('/api/auth', authRouter);
