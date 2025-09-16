@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 const AppraisalPage = () => {
   const { email } = useParams();
   const isSupervisor = !!email;
-
+  // chnages
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <AppraisalForm supervisor={ isSupervisor ? { superviseeEmail: decodeURIComponent(email) } : null }/>
