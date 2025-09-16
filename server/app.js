@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const path = require('path');
-const fs = require('fs');
+const axios = require('axios');
 
 const { verifyAccessToken, errorHandler } = require('./middleware');
 const { authRouter, userRouter, responseRouter } = require('./routers');
@@ -33,42 +33,12 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-app.get('/api/download', async (req, res) => {
+app.get('/api/download', (req, res) => {
   const fileId = '1f0YQ__iQ1Y4VEiYLoDcKTxXa0fejV5ST';
   const googleDriveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
   
-  try {
-    console.log('Fetching file from Google Drive...');
-    
-    const response = await axios({
-      method: 'GET',
-      url: googleDriveUrl,
-      responseType: 'stream'
-    });
-    
-    res.set({
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': 'attachment; filename=KPI-Tracker-3.0.1-Setup.exe',
-      'Cache-Control': 'public, max-age=86400'
-    });
-    
-    // Stream the response from Google Drive to the client
-    response.data.pipe(res);
-    
-    console.log('File download started successfully');
-    
-    // Handle stream errors
-    response.data.on('error', (err) => {
-      console.error('Stream error:', err);
-      if (!res.headersSent) {
-        res.status(500).send('Error downloading file');
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error downloading from Google Drive:', error);
-    res.status(500).json({ error: 'Error downloading file' });
-  }
+  // Simply redirect to Google Drive
+  res.redirect(googleDriveUrl);
 });
 
 app.use('/api/auth', authRouter);
