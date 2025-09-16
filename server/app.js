@@ -70,6 +70,7 @@ app.get('/api/download', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/users'/*, verifyAccessToken*/, [userRouter, responseRouter]);
+app.use('/release', express.static(path.join(__dirname, 'release')));
 
 app.get('/', (req, res) => {
     res.send('Hello World');
