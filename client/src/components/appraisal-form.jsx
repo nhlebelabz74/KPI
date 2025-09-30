@@ -246,23 +246,42 @@ const SectionBase = ({ config, email, isSupervisor, appraisalPeriod }) => {
 const AppraisalForm = ({ supervisor }) => {
   const navigate = useNavigate();
   const isSupervisor = !!supervisor; // Check if supervisor is viewing
-
   const [isEvaluated, setIsEvaluated] = useState(false);
   const [appraisalPeriod, setAppraisalPeriod] = useState('Mar 1, 2025 - Aug 31, 2025');
   const periods = ['Mar 1, 2025 - Aug 31, 2025', 'Sep 1, 2025 - Feb 28, 2026'];
 
-  const handleEvaluateProposal = async () => {
-    if(!isEvaluated)
-      return;
+  useEffect(() => {
+    const checkIsEvaluated = async () => {
+      const email = isSupervisor ? AES.encrypt(supervisor.superviseeEmail, import.meta.env.VITE_APP_ENCRYPTION_KEY).toString() : localStorage.getItem('encryptedEmail');
+      const response = await request({
+        type: 'GET',
+        route: '/users/appraisal/status/:email/:appraisalPeriod',
+        routeParams: {
+          email: encodeURIComponent(email),
+          appraisalPeriod: encodeURIComponent(appraisalPeriod)
+        }
+      });
+      
+      setIsEvaluated(response.data?.evaluated);
+    }
 
+    checkIsEvaluated();
+  }, [appraisalPeriod]);
+
+  const handleSwitchToggle = async (checked) => {
     try {
       await request({
         type: 'POST',
         route: '/users/appraisal/evaluate',
         body: {
-          email: encodeURIComponent(supervisor.superviseeEmail),
-          appraisalPeriod: appraisalPeriod
+          email: encodeURIComponent(AES.encrypt(supervisor.superviseeEmail, import.meta.env.VITE_APP_ENCRYPTION_KEY).toString()),
+          appraisalPeriod: appraisalPeriod,
+          evaluated: checked
         }
+      });
+      setIsEvaluated(checked);
+      toast.success(`Proposal ${checked ? 'evaluated' : 'marked as not evaluated'}`, {
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
       });
     }
     catch (error) {
@@ -279,7 +298,7 @@ const AppraisalForm = ({ supervisor }) => {
         <Button 
           variant="outline"
           size="sm" 
-          onClick={() => { handleEvaluateProposal(); navigate(-1) }} 
+          onClick={() => { navigate(-1) }} 
           className="mb-4 cursor-pointer"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -298,9 +317,9 @@ const AppraisalForm = ({ supervisor }) => {
         {/* Add switch */}
         <div className='flex flex-col gap-2'>
           <Label className="mb-2">{ isEvaluated ? 'Evaluated' : 'Not Evaluated'}</Label>
-          <Switch 
+          <Switch
             checked={isEvaluated} 
-            onCheckedChange={(checked) => setIsEvaluated(checked)} 
+            onCheckedChange={handleSwitchToggle} 
             disabled={!isSupervisor}
           />
         </div>

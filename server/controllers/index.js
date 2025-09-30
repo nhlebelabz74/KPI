@@ -4,7 +4,7 @@ const logoutController = require('./auth/logoutController');
 const refreshController = require('./auth/refreshController');
 const { sendResetPasswordCode, forgotPassword } = require('./auth/forgotPasswordController');
 const { getUserByEmail, createUsers, getCompletedKPIs, getKPIInfo, addAdmin } = require('./users/getController');
-const { getResponse, updateResponse, nudgeUser, requestPeerDocument, requestSupervisorDocument, saveAppraisal, loadAppraisalAnswers, evaluateAppraisal } = require('./users/responseController');
+const { getResponse, updateResponse, nudgeUser, requestPeerDocument, requestSupervisorDocument, saveAppraisal, loadAppraisalAnswers, evaluateAppraisal, getAppraisalStatus } = require('./users/responseController');
 
 module.exports = {
   loginController,
@@ -24,5 +24,6 @@ module.exports = {
   requestSupervisorDocument,
   saveAppraisal,
   loadAppraisalAnswers,
-  evaluateAppraisal
+  evaluateAppraisal,
+  getAppraisalStatus
 };

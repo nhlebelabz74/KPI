@@ -282,7 +282,7 @@ const loadAppraisalAnswers = asyncWrapper(async (req, res) => {
 // evaluate appraisal
 // endpoint: appraisal/evaluate
 const evaluateAppraisal = asyncWrapper(async (req, res) => {
-  const { email, appraisalPeriod } = req.body;
+  const { email, appraisalPeriod, evaluated } = req.body;
   
   try {
     const decryptedEmail = AES.decrypt(decodeURIComponent(email), process.env.ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
@@ -304,7 +304,7 @@ const evaluateAppraisal = asyncWrapper(async (req, res) => {
     }
 
     // update the appraisal to evaluated
-    appraisal.evaluated = true;
+    appraisal.evaluated = evaluated;
     await appraisal.save();
 
     res.status(200).json({ message: 'Appraisal evaluated successfully' });
@@ -315,10 +315,9 @@ const evaluateAppraisal = asyncWrapper(async (req, res) => {
 });
 
 // get appraisal status (to check if evaluated)
-// endpoint: appraisal/status/:email
+// endpoint: appraisal/status/:email/:appraisalPeriod
 const getAppraisalStatus = asyncWrapper(async (req, res) => {
-  const { email } = req.params;
-  const { appraisalPeriod } = req.query;
+  const { email, appraisalPeriod } = req.params;
   
   try {
     const decryptedEmail = AES.decrypt(decodeURIComponent(email), process.env.ENCRYPTION_KEY).toString(CryptoJS.enc.Utf8);
@@ -332,7 +331,7 @@ const getAppraisalStatus = asyncWrapper(async (req, res) => {
     // get appraisal by userId and appraisalPeriod
     const appraisal = await Appraisal.findOne({ 
       userId: user._id, 
-      appraisalPeriod: appraisalPeriod 
+      appraisalPeriod: decodeURIComponent(appraisalPeriod) 
     });
 
     if (!appraisal) {
@@ -343,7 +342,7 @@ const getAppraisalStatus = asyncWrapper(async (req, res) => {
       });
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Appraisal status retrieved successfully',
       evaluated: appraisal.evaluated,
       exists: true,

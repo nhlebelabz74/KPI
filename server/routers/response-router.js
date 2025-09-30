@@ -1,4 +1,4 @@
-const { getResponse, updateResponse, nudgeUser, requestPeerDocument, requestSupervisorDocument, saveAppraisal, loadAppraisalAnswers, evaluateAppraisal } = require('../controllers');
+const { getResponse, updateResponse, nudgeUser, requestPeerDocument, requestSupervisorDocument, saveAppraisal, loadAppraisalAnswers, evaluateAppraisal, getAppraisalStatus } = require('../controllers');
 
 const responseRouter = require('express').Router();
 
@@ -11,5 +11,6 @@ responseRouter.post('/request/super/document', requestSupervisorDocument);
 responseRouter.post('/appraisal/save', saveAppraisal);
 responseRouter.get('/appraisal/get-response/:email/:sectionId/:appraisalPeriod', loadAppraisalAnswers);
 responseRouter.post('/appraisal/evaluate', evaluateAppraisal);
+responseRouter.get('/appraisal/status/:email/:appraisalPeriod', getAppraisalStatus);
 
 module.exports = responseRouter;
