@@ -253,6 +253,7 @@ const AppraisalForm = ({ supervisor }) => {
   const [isEvaluated, setIsEvaluated] = useState(false);
   const [appraisalPeriod, setAppraisalPeriod] = useState('Mar 1, 2025 - Aug 31, 2025');
   const periods = ['Mar 1, 2025 - Aug 31, 2025', 'Sep 1, 2025 - Feb 28, 2026'];
+  const email = isSupervisor ? AES.encrypt(supervisor.superviseeEmail, import.meta.env.VITE_APP_ENCRYPTION_KEY).toString() : localStorage.getItem('encryptedEmail');
 
   useEffect(() => {
     const checkIsEvaluated = async () => {
