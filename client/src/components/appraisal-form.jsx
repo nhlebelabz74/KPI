@@ -291,6 +291,118 @@ const AppraisalForm = ({ supervisor }) => {
       });
     }
   }
+  const sendToPowerAutomate = async () => {
+  const flowUrl = "https://default89055e55191e4127b426bad22809e6.4a.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/64e3a742aae841d59e647bdc3963ca13/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=YUnc8DRIcaPmlrL5pyrI27zrPCO50hjuHc-6JR7V_qw"; // set this in your .env
+  if (!flowUrl) {
+    toast.error("Power Automate URL is missing. Set VITE_POWER_AUTOMATE_URL in .env");
+     return;
+  }
+
+  try {
+    toast.loading("Collecting responses and sending to Power Automate...");
+
+    // Build all requests concurrently
+    const requests = sections.map((s) =>
+      request({
+        type: 'GET',
+        route: '/users/appraisal/get-response/:email/:sectionId/:appraisalPeriod',
+        routeParams: {
+          email, // note: your code already sends encrypted + encodeURIComponent where needed
+          sectionId: s.section,
+          appraisalPeriod: appraisalPeriod,
+        },
+      }).then((res) => ({
+        ok: true,
+        sectionId: s.section,
+        introParagraph: s.introParagraph || '',
+        answers: res?.data?.answers || [],
+        updatedAt: res?.data?.updatedAt || null,
+      }))
+      .catch((err) => ({
+        ok: false,
+        sectionId: s.section,
+        error: err?.message || 'Failed to fetch section',
+      }))
+    );
+
+    const settled = await Promise.allSettled(requests);
+
+    // Normalize results
+    const sectionsPayload = [];
+    const failedSections = [];
+    let lastUpdatedAt = null;
+
+    for (const r of settled) {
+      if (r.status === 'fulfilled') {
+        const item = r.value;
+        if (item.ok) {
+          // Track last updated time
+          if (item.updatedAt) {
+            const t = new Date(item.updatedAt).getTime();
+            if (!lastUpdatedAt || t > new Date(lastUpdatedAt).getTime()) {
+              lastUpdatedAt = new Date(t).toISOString();
+            }
+          }
+          sectionsPayload.push({
+            sectionId: item.sectionId,
+            introParagraph: item.introParagraph,
+            answers: item.answers,
+            updatedAt: item.updatedAt,
+          });
+        } else {
+          failedSections.push({ sectionId: item.sectionId, error: item.error });
+        }
+      } else {
+        // Promise rejected
+        failedSections.push({ sectionId: 'unknown', error: r.reason?.message || 'Unknown error' });
+      }
+    }
+
+    // Prepare final export payload
+    console.log(AES.decrypt(email, SECRET_KEY).toString(CryptoJS.enc.Utf8));
+    const exportPayload = {
+      email: AES.decrypt(email, SECRET_KEY).toString(CryptoJS.enc.Utf8) || 'self', // send plaintext for Power Automate to consume
+      emailEncrypted: email, // also include the encrypted email you’re using internally
+      appraisalPeriod,
+      submittedAt: new Date().toISOString(),
+      sections: sectionsPayload,
+      lastUpdatedAt,
+      meta: {
+        appVersion: import.meta.env.VITE_APP_VERSION || 'unknown',
+        failedSections, // so you can see in the Flow which ones failed
+        viewerRole: supervisor ? 'supervisor' : 'user',
+      },
+    };
+
+    // Post to Power Automate Flow
+    const resp = await fetch(flowUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // You can add auth if your Flow is a secured custom connector or behind APIM
+        // 'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(exportPayload),
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      throw new Error(`Flow responded with ${resp.status}: ${text || 'No details'}`);
+    }
+
+    toast.dismiss();
+    if (failedSections.length) {
+      toast.success(`Sent to Power Automate (with ${failedSections.length} section warning${failedSections.length > 1 ? 's' : ''}).`);
+      console.warn('Sections that failed to fetch:', failedSections);
+    } else {
+      toast.success('Successfully sent to Power Automate!');
+    }
+  } catch (err) {
+    console.error('sendToPowerAutomate error:', err);
+    toast.dismiss();
+    toast.error(err?.message || 'Failed to send to Power Automate');
+  }
+};
 
   return (
     <div className="min-w-5xl mx-auto p-6">
@@ -360,6 +472,17 @@ const AppraisalForm = ({ supervisor }) => {
           appraisalPeriod={appraisalPeriod}
         />
       ))}
+       {/* ↓↓↓ ADD THIS RIGHT BELOW THE SECTIONS ↓↓↓ */}
+      <div className="w-full flex justify-end mt-6">
+        <Button 
+          variant="outline" 
+          size="lg" 
+          onClick={sendToPowerAutomate}
+          className="cursor-pointer"
+        >
+          Send to Email
+        </Button>
+      </div>
     </div>
   );
 };
