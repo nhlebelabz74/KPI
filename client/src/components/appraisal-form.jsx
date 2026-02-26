@@ -20,7 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AES } from 'crypto-js';
+
+import CryptoJS, { AES } from "crypto-js";
+
+
+const SECRET_KEY = import.meta.env.VITE_APP_ENCRYPTION_KEY;
 
 // assuming supervisee email is encrypted
 const SectionBase = ({ config, email, isSupervisor, appraisalPeriod }) => {
