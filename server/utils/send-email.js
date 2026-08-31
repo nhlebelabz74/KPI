@@ -4,7 +4,7 @@ require('dotenv').config();
 const sendEmail = async ({ receiver_email, subject, html }) => {
     try {
       const api = axios.create({
-        baseURL: "https://prod-157.westeurope.logic.azure.com:443/workflows/b485fead598a41a2ba6f9f972db6487c/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=FaVCuWdFeY9bIhnWRCdnQAgpKxCgVf-hvS9twiyt6v4",
+        baseURL: "https://default89055e55191e4127b426bad22809e6.4a.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/b485fead598a41a2ba6f9f972db6487c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=7OSpeHhOV1nogYWXzNfN7nmzzihVsY1qVqoBGhijmAA",
         headers: {
           'Content-Type': 'application/json'
         },

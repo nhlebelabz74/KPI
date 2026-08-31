@@ -252,7 +252,7 @@ const AppraisalForm = ({ supervisor }) => {
   const isSupervisor = !!supervisor; // Check if supervisor is viewing
   const [isEvaluated, setIsEvaluated] = useState(false);
   const [appraisalPeriod, setAppraisalPeriod] = useState('Mar 1, 2025 - Aug 31, 2025');
-  const periods = ['Mar 1, 2025 - Aug 31, 2025', 'Sep 1, 2025 - Feb 28, 2026'];
+  const periods = ['Mar 1, 2025 - Aug 31, 2025', 'Sep 1, 2025 - Feb 28, 2026', 'Sep 1, 2026 - Feb 28, 2027'];
   const email = isSupervisor ? AES.encrypt(supervisor.superviseeEmail, import.meta.env.VITE_APP_ENCRYPTION_KEY).toString() : localStorage.getItem('encryptedEmail');
 
   useEffect(() => {
